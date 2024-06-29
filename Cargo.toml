@@ -1,0 +1,46 @@
+[package]
+name = "kaspa-resolver"
+description = "Kaspa wRPC endpoint resolver and monitor"
+version = "0.1.0"
+edition = "2021"
+# authors.workspace = true
+# include.workspace = true
+# license.workspace = true
+# repository.workspace = true
+
+[dependencies]
+
+workflow-core = "0.13.3"
+workflow-http = "0.13.3"
+workflow-log = "0.13.3"
+
+kaspa-consensus-core = { path = "../rusty-kaspa/consensus/core" }
+kaspa-rpc-core = { path = "../rusty-kaspa/rpc/core" }
+kaspa-utils = { path = "../rusty-kaspa/utils" }
+kaspa-wrpc-client = { path = "../rusty-kaspa/rpc/wrpc/client" }
+
+# kaspa-consensus-core = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "sparkle" }
+# kaspa-rpc-core = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "sparkle" }
+# kaspa-utils = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "sparkle" }
+# kaspa-wrpc-client = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "sparkle" }
+
+sparkle-rpc-core = { path = "../sparkle/rpc/core" }
+sparkle-rpc-client = { path = "../sparkle/rpc/client" }
+
+ahash = "0.8.6"
+axum = "0.7.4"
+cfg-if = "1.0.0"
+clap = { version = "4.4.7", features = ["derive", "string", "cargo"] }
+console = "0.15.8"
+convert_case = "0.6.0"
+futures = { version = "0.3.29" }
+mime = "0.3.16"
+serde = { version = "1.0.190", features = ["derive", "rc"] }
+serde_json = "1.0.107"
+thiserror = "1.0.50"
+tokio = { version = "1.33.0", features = ["sync", "rt-multi-thread"] }
+toml = "0.8.8"
+tower = { version = "0.4.13", features = ["buffer","limit"] }
+tower-http = { version = "0.5.1", features = ["cors"] }
+tracing-subscriber = "0.3.18"
+xxhash-rust = { version = "0.8.7", features = ["xxh3"] }
