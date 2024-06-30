@@ -5,7 +5,7 @@ use std::str::FromStr;
 #[command(version, about, long_about = None)]
 pub struct Args {
     /// HTTP server port
-    #[arg(long, default_value = "127.0.0.1:8888")]
+    #[arg(long, default_value = "127.0.0.1:8989")]
     pub listen: String,
 
     /// Optional rate limit in the form `<requests>:<seconds>`, where `requests` is the number of requests allowed per specified number of `seconds`
