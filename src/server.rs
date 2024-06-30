@@ -20,7 +20,11 @@ pub async fn server(args: &Args) -> Result<(TcpListener, Router)> {
     // initialize tracing
     tracing_subscriber::fmt::init();
 
-    let app = Router::new().route("/v1/wrpc/:encoding/:network", get(get_elected_node));
+    let app = Router::new().route(
+        "/v2/kaspad/wrpc/:encoding/:network",
+        get(get_elected_kaspad),
+    );
+    // let app = app.route("/v2/sparkle/wrpc/:encoding/:network", get(get_elected_sparkle));
 
     let app = if args.status {
         log_warn!("Routes", "Enabling `/status` route");
@@ -80,7 +84,37 @@ async fn get_status_all_nodes() -> impl IntoResponse {
 }
 
 // respond with a JSON object containing the elected node
-async fn get_elected_node(
+async fn get_elected_kaspad(
+    Query(_query): Query<QueryParams>,
+    Path(params): Path<PathParams>,
+) -> impl IntoResponse {
+    // println!("params: {:?}", params);
+    // println!("query: {:?}", query);
+
+    if let Some(json) = monitor().get_json(&params) {
+        (
+            [(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
+            )],
+            json,
+        )
+            .into_response()
+    } else {
+        (
+            StatusCode::NOT_FOUND,
+            [(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static(mime::TEXT_PLAIN_UTF_8.as_ref()),
+            )],
+            "NOT FOUND".to_string(),
+        )
+            .into_response()
+    }
+}
+
+#[allow(dead_code)]
+async fn get_elected_sparkle(
     Query(_query): Query<QueryParams>,
     Path(params): Path<PathParams>,
 ) -> impl IntoResponse {
