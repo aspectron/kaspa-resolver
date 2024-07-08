@@ -1,62 +1,52 @@
-use crate::connection::{Connection, Descriptor};
 use crate::imports::*;
-
-static MONITOR: OnceLock<Arc<Monitor>> = OnceLock::new();
-
-pub fn init(args: &Arc<Args>) {
-    MONITOR.set(Arc::new(Monitor::new(args))).unwrap();
-}
-
-pub fn monitor() -> &'static Arc<Monitor> {
-    MONITOR.get().unwrap()
-}
-
-pub async fn start() -> Result<()> {
-    monitor().start().await
-}
-
-pub async fn stop() -> Result<()> {
-    monitor().stop().await
-}
 
 /// Monitor receives updates from [Connection] monitoring tasks
 /// and updates the descriptors for each [Params] based on the
 /// connection store (number of connections * bias).
-pub struct Monitor {
+pub struct Monitor<T>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
     args: Arc<Args>,
-    connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection>>>>,
-    descriptors: RwLock<AHashMap<PathParams, Descriptor>>,
+    name: &'static str,
+    connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection<T>>>>>,
+    sorts: AHashMap<PathParams, AtomicBool>,
+    // descriptors: RwLock<AHashMap<PathParams, Descriptor>>,
     channel: Channel<PathParams>,
     shutdown_ctl: DuplexChannel<()>,
+
+    // ---
+    _phantom: std::marker::PhantomData<T>,
 }
 
-impl Default for Monitor {
-    fn default() -> Self {
-        Self {
-            args: Arc::new(Args::default()),
-            connections: Default::default(),
-            descriptors: Default::default(),
-            channel: Channel::unbounded(),
-            shutdown_ctl: DuplexChannel::oneshot(),
-        }
-    }
-}
-
-impl fmt::Debug for Monitor {
+impl<T> fmt::Debug for Monitor<T>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Monitor")
             .field("verbose", &self.verbose())
-            .field("connections", &self.connections)
-            .field("descriptors", &self.descriptors)
+            // .field("connections", &self.connections)
+            // .field("descriptors", &self.descriptors)
             .finish()
     }
 }
 
-impl Monitor {
-    pub fn new(args: &Arc<Args>) -> Self {
+impl<T> Monitor<T>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
+    pub fn new(name: &'static str) -> Self {
         Self {
-            args: args.clone(),
-            ..Default::default()
+            args: Arc::new(Args::default()),
+            name,
+            connections: Default::default(),
+            sorts: Default::default(),
+            channel: Channel::unbounded(),
+            shutdown_ctl: DuplexChannel::oneshot(),
+
+            // ---
+            _phantom: Default::default(),
         }
     }
 
@@ -64,12 +54,12 @@ impl Monitor {
         self.args.verbose
     }
 
-    pub fn connections(&self) -> AHashMap<PathParams, Vec<Arc<Connection>>> {
+    pub fn connections(&self) -> AHashMap<PathParams, Vec<Arc<Connection<T>>>> {
         self.connections.read().unwrap().clone()
     }
 
     /// Process an update to `Server.toml` removing or adding node connections accordingly.
-    pub async fn update_nodes(&self, nodes: Vec<Arc<Node>>) -> Result<()> {
+    pub async fn update_nodes(self: &Arc<Self>, nodes: Vec<Arc<Node>>) -> Result<()> {
         let mut connections = self.connections();
 
         for params in PathParams::iter() {
@@ -93,6 +83,7 @@ impl Monitor {
 
             for node in create {
                 let created = Arc::new(Connection::try_new(
+                    self.clone(),
                     (*node).clone(),
                     self.channel.sender.clone(),
                     &self.args,
@@ -116,7 +107,8 @@ impl Monitor {
     }
 
     pub async fn start(self: &Arc<Self>) -> Result<()> {
-        let toml = std::fs::read_to_string(Path::new("Servers.toml"))?;
+        let filename = format!("{}.toml", self.name);
+        let toml = std::fs::read_to_string(Path::new(&filename))?;
         let nodes = crate::node::try_parse_nodes(toml.as_str())?;
 
         let this = self.clone();
@@ -140,70 +132,53 @@ impl Monitor {
     }
 
     async fn task(self: Arc<Self>) -> Result<()> {
-        let receiver = self.channel.receiver.clone();
+        let _receiver = self.channel.receiver.clone();
         let shutdown_ctl_receiver = self.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
+
+        let update = workflow_core::task::interval(Duration::from_secs(60 * 60 * 12));
+        pin_mut!(update);
+
+        let interval = workflow_core::task::interval(Duration::from_millis(300));
+        pin_mut!(interval);
 
         loop {
             select! {
 
-                msg = receiver.recv().fuse() => {
-                    match msg {
-                        Ok(params) => {
+                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
+                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
+                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
+                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
+                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
+                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
 
-                            // run node elections
+                // msg = receiver.recv().fuse() => {
+                //     match msg {
+                //         Ok(params) => {
+                //         }
+                //         Err(err) => {
+                //             println!("Monitor: error while receiving update message: {err}");
+                //         }
+                //     }
+                // }
+                _ = update.next().fuse() => {
+                    if let Err(err) = crate::config::update().await {
+                        log_error!("Update", "{}", err);
+                    }
+                }
+                _ = interval.next().fuse() => {
+                    for (params, sort) in self.sorts.iter() {
+                        if sort.load(Ordering::Relaxed) {
+                            sort.store(false, Ordering::Relaxed);
 
-                            let mut connections = self.connections()
-                                .get(&params)
-                                .expect("Monitor: expecting existing connection params")
-                                .clone()
-                                .into_iter()
-                                .filter(|connection|connection.online())
-                                .collect::<Vec<_>>();
-                            if connections.is_empty() {
-                                self.descriptors.write().unwrap().remove(&params);
-                            } else {
-                                connections.sort_by_key(|connection| connection.score());
-
-                                if self.args.election {
-                                    log_success!("","");
-                                    connections.iter().for_each(|connection| {
-                                        log_warn!("Node","{}", connection);
-                                    });
-                                }
-
-                                if let Some(descriptor) = connections.first().unwrap().descriptor() {
-                                    let mut descriptors = self.descriptors.write().unwrap();
-
-                                    // extra debug output & monitoring
-                                    if self.args.verbose || self.args.election {
-                                        if let Some(current) = descriptors.get(&params) {
-                                            if current.connection.node.id != descriptor.connection.node.id {
-                                                log_success!("Election","{}", descriptor.connection);
-                                                descriptors.insert(params,descriptor);
-                                            } else {
-                                                log_success!("Keep","{}", descriptor.connection);
-                                            }
-                                        } else {
-                                            log_success!("Default","{}", descriptor.connection);
-                                            descriptors.insert(params,descriptor);
-                                        }
-                                    } else {
-                                        descriptors.insert(params,descriptor);
-                                    }
-                                }
-
-                                if self.args.election && self.args.verbose {
-                                    log_success!("","");
-                                }
+                            let mut connections = self.connections.write().unwrap();
+                            if let Some(nodes) = connections.get_mut(params) {
+                                nodes.sort_by_key(|connection| connection.score());
                             }
                         }
-                        Err(err) => {
-                            println!("Monitor: error while receiving update message: {err}");
-                        }
                     }
-
                 }
+
                 _ = shutdown_ctl_receiver.recv().fuse() => {
                     break;
                 },
@@ -216,26 +191,61 @@ impl Monitor {
         Ok(())
     }
 
-    /// Get the status of all nodes as a JSON string (available via `/status` endpoint if enabled).
-    pub fn get_all_json(&self) -> String {
+    // /// Get the status of all nodes as a JSON string (available via `/status` endpoint if enabled).
+    pub fn get_all(&self) -> Vec<Arc<Connection<T>>> {
         let connections = self.connections();
-        let nodes = connections
-            .values()
-            .flatten()
-            .map(Status::from)
-            .collect::<Vec<_>>();
-        serde_json::to_string(&nodes).unwrap()
+        let nodes = connections.values().flatten().cloned().collect::<Vec<_>>();
+        nodes
     }
 
-    /// Get JSON string representing node information (id, url, provider, link)
-    pub fn get_json(&self, params: &PathParams) -> Option<String> {
-        self.descriptors
-            .read()
-            .unwrap()
+    pub fn schedule_sort(&self, params: &PathParams) {
+        self.sorts
             .get(params)
-            .cloned()
-            .map(|descriptor| descriptor.json)
+            .unwrap()
+            .store(true, Ordering::Relaxed);
     }
+
+    // /// Get JSON string representing node information (id, url, provider, link)
+    pub fn election(&self, params: &PathParams) -> Option<String> {
+        let connections = self.connections.read().unwrap();
+        let connections = connections
+            .get(params)
+            .expect("Monitor: expecting existing connection params")
+            .iter()
+            .filter(|connection| connection.is_available())
+            .collect::<Vec<_>>();
+
+        if !connections.is_empty() {
+            let node = select_with_weighted_rng(connections);
+            serde_json::to_string(&Status::from(node)).ok()
+        } else {
+            None
+        }
+    }
+}
+
+fn select_with_weighted_rng<T>(nodes: Vec<&Arc<Connection<T>>>) -> &Arc<Connection<T>>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
+    // Calculate total weight based on the position in the sorted list
+    let total_weight: usize = nodes.iter().enumerate().map(|(i, _)| nodes.len() - i).sum();
+
+    // Generate a random number within the range of total_weight
+    let mut rng = rand::thread_rng();
+    let mut rand_weight = rng.gen_range(0..total_weight);
+
+    // Select a node based on the random weight
+    for (i, node) in nodes.iter().enumerate() {
+        let weight = nodes.len() - i;
+        if rand_weight < weight {
+            return node;
+        }
+        rand_weight -= weight;
+    }
+
+    // Fallback in case of error (shouldn't happen)
+    nodes[0]
 }
 
 #[derive(Serialize)]
@@ -253,8 +263,11 @@ pub struct Status<'a> {
     pub status: &'static str,
 }
 
-impl<'a> From<&'a Arc<Connection>> for Status<'a> {
-    fn from(connection: &'a Arc<Connection>) -> Self {
+impl<'a, T> From<&'a Arc<Connection<T>>> for Status<'a>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
+    fn from(connection: &'a Arc<Connection<T>>) -> Self {
         let url = connection.node.address.as_str();
         let provider_name = connection
             .node

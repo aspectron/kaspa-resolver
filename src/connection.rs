@@ -1,23 +1,12 @@
 use crate::imports::*;
 
-const BIAS_SCALE: u64 = 1_000_000;
+#[allow(dead_code)]
+pub const BIAS_SCALE: u64 = 1_000_000;
 
-#[derive(Debug, Clone)]
-pub struct Descriptor {
-    pub connection: Arc<Connection>,
-    pub json: String,
-}
-
-impl From<&Arc<Connection>> for Descriptor {
-    fn from(connection: &Arc<Connection>) -> Self {
-        Self {
-            connection: connection.clone(),
-            json: serde_json::to_string(&Output::from(connection)).unwrap(),
-        }
-    }
-}
-
-impl fmt::Display for Connection {
+impl<T> fmt::Display for Connection<T>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -30,43 +19,47 @@ impl fmt::Display for Connection {
 }
 
 #[derive(Debug)]
-pub struct Connection {
+pub struct Connection<T>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
     pub node: Arc<Node>,
-    bias: u64,
-    descriptor: RwLock<Option<Descriptor>>,
-    sender: Sender<PathParams>,
-    client: KaspaRpcClient,
+    monitor: Arc<Monitor<T>>,
+    params: PathParams,
+    client: T,
     shutdown_ctl: DuplexChannel<()>,
-    is_connected: Arc<AtomicBool>,
-    is_synced: Arc<AtomicBool>,
-    is_online: Arc<AtomicBool>,
-    clients: Arc<AtomicU64>,
+    caps: OnceLock<Caps>,
+    is_connected: AtomicBool,
+    is_synced: AtomicBool,
+    is_online: AtomicBool,
+    clients: AtomicU64,
     args: Arc<Args>,
 }
 
-impl Connection {
-    pub fn try_new(node: Arc<Node>, sender: Sender<PathParams>, args: &Arc<Args>) -> Result<Self> {
-        let client = KaspaRpcClient::new(node.encoding, Some(&node.address), None, None, None)?;
-        let descriptor = RwLock::default();
-        let shutdown_ctl = DuplexChannel::oneshot();
-        let is_connected = Arc::new(AtomicBool::new(false));
-        let is_synced = Arc::new(AtomicBool::new(true));
-        let is_online = Arc::new(AtomicBool::new(false));
-        let clients = Arc::new(AtomicU64::new(0));
-        let bias = (node.bias.unwrap_or(1.0) * BIAS_SCALE as f64) as u64;
-        let args = args.clone();
+impl<T> Connection<T>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
+    pub fn try_new(
+        monitor: Arc<Monitor<T>>,
+        node: Arc<Node>,
+        _sender: Sender<PathParams>,
+        args: &Arc<Args>,
+    ) -> Result<Self> {
+        let params = node.params();
+        let client = T::try_new(node.encoding, &node.address)?;
         Ok(Self {
+            monitor,
+            params,
             node,
-            descriptor,
-            sender,
             client,
-            shutdown_ctl,
-            is_connected,
-            is_synced,
-            is_online,
-            clients,
-            bias,
-            args,
+            shutdown_ctl: DuplexChannel::oneshot(),
+            caps: OnceLock::new(),
+            is_connected: AtomicBool::new(false),
+            is_synced: AtomicBool::new(false),
+            is_online: AtomicBool::new(false),
+            clients: AtomicU64::new(0),
+            args: args.clone(),
         })
     }
 
@@ -75,7 +68,16 @@ impl Connection {
     }
 
     pub fn score(&self) -> u64 {
-        self.clients.load(Ordering::Relaxed) * self.bias / BIAS_SCALE
+        self.clients.load(Ordering::Relaxed) // * self.bias / BIAS_SCALE
+    }
+
+    pub fn is_available(&self) -> bool {
+        self.online()
+            && self
+                .caps
+                .get()
+                .map(|caps| caps.socket_capacity > self.clients())
+                .unwrap_or(false)
     }
 
     pub fn connected(&self) -> bool {
@@ -106,10 +108,6 @@ impl Connection {
         }
     }
 
-    pub fn descriptor(&self) -> Option<Descriptor> {
-        self.descriptor.read().unwrap().clone()
-    }
-
     async fn connect(&self) -> Result<()> {
         let options = ConnectOptions {
             block_async_connect: false,
@@ -117,17 +115,17 @@ impl Connection {
             ..Default::default()
         };
 
-        self.client.connect(Some(options)).await?;
+        self.client.connect(options).await?;
         Ok(())
     }
 
     async fn task(self: Arc<Self>) -> Result<()> {
         self.connect().await?;
-        let rpc_ctl_channel = self.client.rpc_ctl().multiplexer().channel();
+        let rpc_ctl_channel = self.client.multiplexer().channel();
         let shutdown_ctl_receiver = self.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
 
-        let interval = workflow_core::task::interval(Duration::from_secs(5));
+        let interval = workflow_core::task::interval(Duration::from_secs(1));
         pin_mut!(interval);
 
         loop {
@@ -141,7 +139,7 @@ impl Connection {
                             if self.verbose() {
                                 log_error!("Offline","{}", self.node.address);
                             }
-                            self.update(online).await?;
+                            self.update();
                         }
                     }
                 }
@@ -152,20 +150,20 @@ impl Connection {
 
                             // handle wRPC channel connection and disconnection events
                             match msg {
-                                RpcState::Connected => {
+                                Ctl::Connect => {
                                     log_success!("Connected","{}",self.node.address);
                                     self.is_connected.store(true, Ordering::Relaxed);
                                     if self.update_metrics().await.is_ok() {
                                         self.is_online.store(true, Ordering::Relaxed);
-                                        self.update(true).await?;
+                                        self.update();
                                     } else {
                                         self.is_online.store(false, Ordering::Relaxed);
                                     }
                                 },
-                                RpcState::Disconnected => {
+                                Ctl::Disconnect => {
                                     self.is_connected.store(false, Ordering::Relaxed);
                                     self.is_online.store(false, Ordering::Relaxed);
-                                    self.update(false).await?;
+                                    self.update();
                                     log_error!("Disconnected","{}",self.node.address);
                                 }
                             }
@@ -208,37 +206,31 @@ impl Connection {
         Ok(())
     }
 
-    async fn update_metrics(self: &Arc<Self>) -> Result<bool> {
-        match self.client.get_sync_status().await {
+    async fn update_metrics(self: &Arc<Self>) -> Result<()> {
+        if self.caps.get().is_none() {
+            let caps = self.client.get_caps().await?;
+            self.caps.set(caps).unwrap();
+        }
+
+        match self.client.get_sync().await {
             Ok(is_synced) => {
                 let previous_sync = self.is_synced.load(Ordering::Relaxed);
                 self.is_synced.store(is_synced, Ordering::Relaxed);
 
                 if is_synced {
-                    match self
-                        .client
-                        .get_metrics(false, true, false, false, false)
-                        .await
-                    {
-                        Ok(metrics) => {
-                            if let Some(connection_metrics) = metrics.connection_metrics {
-                                // update
+                    match self.client.get_active_connections().await {
+                        Ok(connections) => {
+                            if self.verbose() {
                                 let previous = self.clients.load(Ordering::Relaxed);
-                                let clients = connection_metrics.borsh_live_connections as u64
-                                    + connection_metrics.json_live_connections as u64;
-                                self.clients.store(clients, Ordering::Relaxed);
-                                if clients != previous {
-                                    if self.verbose() {
-                                        log_success!("Clients", "{self}");
-                                    }
-                                    Ok(true)
-                                } else {
-                                    Ok(false)
+                                if connections != previous {
+                                    self.clients.store(connections, Ordering::Relaxed);
+                                    log_success!("Clients", "{self}");
                                 }
                             } else {
-                                log_error!("Metrics", "{self} - failure");
-                                Err(Error::ConnectionMetrics)
+                                self.clients.store(connections, Ordering::Relaxed);
                             }
+
+                            Ok(())
                         }
                         Err(err) => {
                             log_error!("Metrics", "{self}");
@@ -261,10 +253,9 @@ impl Connection {
         }
     }
 
-    pub async fn update(self: &Arc<Self>, online: bool) -> Result<()> {
-        *self.descriptor.write().unwrap() = online.then_some(self.into());
-        self.sender.try_send(self.node.params())?;
-        Ok(())
+    #[inline]
+    pub fn update(&self) {
+        self.monitor.schedule_sort(&self.params);
     }
 }
 
@@ -280,8 +271,11 @@ pub struct Output<'a> {
     pub provider_url: Option<&'a str>,
 }
 
-impl<'a> From<&'a Arc<Connection>> for Output<'a> {
-    fn from(connection: &'a Arc<Connection>) -> Self {
+impl<'a, T> From<&'a Arc<Connection<T>>> for Output<'a>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
+    fn from(connection: &'a Arc<Connection<T>>) -> Self {
         let id = connection.node.id_string.as_str();
         let url = connection.node.address.as_str();
         let provider_name = connection

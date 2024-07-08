@@ -2153,17 +2153,21 @@ name = "kaspa-resolver"
 version = "0.1.0"
 dependencies = [
  "ahash",
+ "async-trait",
  "axum",
+ "borsh",
  "cfg-if 1.0.0",
  "clap",
  "console",
  "convert_case 0.6.0",
+ "dirs",
  "futures",
  "kaspa-consensus-core",
  "kaspa-rpc-core",
  "kaspa-utils",
  "kaspa-wrpc-client",
  "mime",
+ "rand",
  "serde",
  "serde_json",
  "sparkle-rpc-client",
@@ -2175,8 +2179,11 @@ dependencies = [
  "tower-http",
  "tracing-subscriber",
  "workflow-core",
+ "workflow-encryption",
  "workflow-http",
  "workflow-log",
+ "workflow-rpc",
+ "workflow-serializer",
  "xxhash-rust",
 ]
 
@@ -4852,8 +4859,6 @@ dependencies = [
 [[package]]
 name = "workflow-chrome"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b75e2d6bea942b674215703772ba7a45f430e90994b0cc4c460956a7cd1508b0"
 dependencies = [
  "cfg-if 1.0.0",
  "chrome-sys",
@@ -4867,8 +4872,6 @@ dependencies = [
 [[package]]
 name = "workflow-core"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "643260321c3a2a986c9bac6ed5ef08f6f4962fb421ea8bd7a6aa183b4aa99ea1"
 dependencies = [
  "async-channel 2.3.1",
  "async-std",
@@ -4899,8 +4902,6 @@ dependencies = [
 [[package]]
 name = "workflow-core-macros"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7506504cf89f1737eb1eb485c20a865123e21b57354749058415cc6f47b2e918"
 dependencies = [
  "convert_case 0.6.0",
  "parse-variants",
@@ -4916,8 +4917,6 @@ dependencies = [
 [[package]]
 name = "workflow-dom"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21ffe3726174f58d5c02b4150c23ca07caf3bdddb79e74249d0aba8a9c2504a2"
 dependencies = [
  "futures",
  "js-sys",
@@ -4932,10 +4931,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "workflow-encryption"
+version = "0.13.3"
+dependencies = [
+ "argon2",
+ "borsh",
+ "chacha20poly1305",
+ "serde",
+ "sha2",
+ "thiserror",
+ "workflow-core",
+ "workflow-serializer",
+ "zeroize",
+]
+
+[[package]]
 name = "workflow-http"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27ee1dee7f86f10dd55f157227119c248e9d263a4edc7350d191224aa60754cd"
 dependencies = [
  "cfg-if 1.0.0",
  "reqwest",
@@ -4950,8 +4962,6 @@ dependencies = [
 [[package]]
 name = "workflow-log"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b371e9c84ce1c7f7f9eb495c8afd97682a56e5b359960f0410d466d370bd709"
 dependencies = [
  "cfg-if 1.0.0",
  "console",
@@ -4966,8 +4976,6 @@ dependencies = [
 [[package]]
 name = "workflow-macro-tools"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e98324f2895e3e4e6675e3cecd7fca7615699dd36942c05cb8f4665a1a03ed7e"
 dependencies = [
  "convert_case 0.6.0",
  "parse-variants",
@@ -4979,8 +4987,6 @@ dependencies = [
 [[package]]
 name = "workflow-node"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb25cd690967d5eef54cf55ea942ca806af4478802c199276608c8f9112e48f8"
 dependencies = [
  "borsh",
  "futures",
@@ -5000,8 +5006,6 @@ dependencies = [
 [[package]]
 name = "workflow-panic-hook"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95179cc0d8523774610da286144c21e19c9951d51e4c215d4d20ce9cd141ae98"
 dependencies = [
  "cfg-if 1.0.0",
  "wasm-bindgen",
@@ -5011,8 +5015,6 @@ dependencies = [
 [[package]]
 name = "workflow-rpc"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ceb2e6e00c99063f9c58519207ffadd936cfb87d683add3acecccf0fb581c02b"
 dependencies = [
  "ahash",
  "async-std",
@@ -5041,8 +5043,6 @@ dependencies = [
 [[package]]
 name = "workflow-rpc-macros"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73d4eeb46a411b487485c63787c3cb4c2dfbed3bedc189e004970ff0d4c433c5"
 dependencies = [
  "parse-variants",
  "proc-macro-error",
@@ -5054,8 +5054,6 @@ dependencies = [
 [[package]]
 name = "workflow-serializer"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d314b7df2a10837be1b756c177531eef5de89b434e8a4599973a521a7b26fcc"
 dependencies = [
  "ahash",
  "borsh",
@@ -5065,8 +5063,6 @@ dependencies = [
 [[package]]
 name = "workflow-store"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96c4ea179eab3a95708506609e61bcda06facecec3cdfe42c9321d3d4a8c7174"
 dependencies = [
  "async-std",
  "base64 0.22.1",
@@ -5093,8 +5089,6 @@ dependencies = [
 [[package]]
 name = "workflow-task"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68048ecc70615b0939463b80f514ff31e5744d09640c27adfea9dcc86c229bcb"
 dependencies = [
  "futures",
  "thiserror",
@@ -5105,8 +5099,6 @@ dependencies = [
 [[package]]
 name = "workflow-task-macros"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9c5b7dc18144a39638f80f16cd990e808e36d65c54b6f30de8867509e18f941"
 dependencies = [
  "convert_case 0.6.0",
  "parse-variants",
@@ -5121,8 +5113,6 @@ dependencies = [
 [[package]]
 name = "workflow-wasm"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34fc060edd858c40bd4b7fa988b6a249c80f4605be48feba06b240adfd00b7dd"
 dependencies = [
  "cfg-if 1.0.0",
  "faster-hex 0.9.0",
@@ -5142,8 +5132,6 @@ dependencies = [
 [[package]]
 name = "workflow-wasm-macros"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "131d22befa5a7d4fcddc3d159d58dcbe22dffcf642e3ee92b66f41a31cbac26b"
 dependencies = [
  "js-sys",
  "proc-macro-error",
@@ -5156,8 +5144,6 @@ dependencies = [
 [[package]]
 name = "workflow-websocket"
 version = "0.13.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb53088fdc3b5ad61797705136d4b538e25673053964cfea723b88ddeaf03e19"
 dependencies = [
  "ahash",
  "async-channel 2.3.1",

@@ -1,17 +1,21 @@
 mod args;
+mod config;
 mod connection;
 mod error;
-pub mod imports;
+mod imports;
 mod log;
 mod monitor;
 mod node;
 mod panic;
 mod params;
+mod path;
+mod resolver;
 mod result;
-mod server;
+mod rpc;
 mod transport;
 
 use args::*;
+use resolver::Resolver;
 use result::Result;
 use std::sync::Arc;
 
@@ -35,10 +39,12 @@ async fn run() -> Result<()> {
         env!("CARGO_PKG_VERSION")
     );
 
-    monitor::init(&args);
-    let (listener, app) = server::server(&args).await?;
-    monitor::start().await?;
-    axum::serve(listener, app).await?;
-    monitor::stop().await?;
+    tracing_subscriber::fmt::init();
+
+    let resolver = Arc::new(Resolver::default());
+    resolver.init_http_server(&args).await?;
+    resolver.start().await?;
+    resolver.listen().await?;
+    resolver.stop().await?;
     Ok(())
 }
