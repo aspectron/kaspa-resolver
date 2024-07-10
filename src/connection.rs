@@ -67,10 +67,12 @@ where
         self.args.verbose
     }
 
+    #[inline]
     pub fn score(&self) -> u64 {
         self.clients.load(Ordering::Relaxed) // * self.bias / BIAS_SCALE
     }
 
+    #[inline]
     pub fn is_available(&self) -> bool {
         self.online()
             && self
@@ -80,20 +82,29 @@ where
                 .unwrap_or(false)
     }
 
+    #[inline]
     pub fn connected(&self) -> bool {
         self.is_connected.load(Ordering::Relaxed)
     }
 
+    #[inline]
     pub fn online(&self) -> bool {
         self.is_online.load(Ordering::Relaxed)
     }
 
+    #[inline]
     pub fn is_synced(&self) -> bool {
         self.is_synced.load(Ordering::Relaxed)
     }
 
+    #[inline]
     pub fn clients(&self) -> u64 {
         self.clients.load(Ordering::Relaxed)
+    }
+
+    #[inline]
+    pub fn caps(&self) -> Option<&Caps> {
+        self.caps.get()
     }
 
     pub fn status(&self) -> &'static str {

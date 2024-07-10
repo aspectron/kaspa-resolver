@@ -11,7 +11,6 @@ where
     name: &'static str,
     connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection<T>>>>>,
     sorts: AHashMap<PathParams, AtomicBool>,
-    // descriptors: RwLock<AHashMap<PathParams, Descriptor>>,
     channel: Channel<PathParams>,
     shutdown_ctl: DuplexChannel<()>,
 
@@ -27,7 +26,6 @@ where
         f.debug_struct("Monitor")
             .field("verbose", &self.verbose())
             // .field("connections", &self.connections)
-            // .field("descriptors", &self.descriptors)
             .finish()
     }
 }
@@ -145,22 +143,6 @@ where
         loop {
             select! {
 
-                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
-                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
-                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
-                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
-                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
-                // ! PULL BIN FILE FROM GITHUB TO UPDATE NODES
-
-                // msg = receiver.recv().fuse() => {
-                //     match msg {
-                //         Ok(params) => {
-                //         }
-                //         Err(err) => {
-                //             println!("Monitor: error while receiving update message: {err}");
-                //         }
-                //     }
-                // }
                 _ = update.next().fuse() => {
                     if let Err(err) = crate::config::update().await {
                         log_error!("Update", "{}", err);
@@ -258,9 +240,12 @@ pub struct Status<'a> {
     pub provider_url: Option<&'a str>,
     pub transport: Transport,
     pub encoding: WrpcEncoding,
-    pub network: NetworkId,
+    pub network: &'a NetworkId,
+    pub cores: u64,
     pub online: bool,
     pub status: &'static str,
+    pub clients: u64,
+    pub capacity: u64,
 }
 
 impl<'a, T> From<&'a Arc<Connection<T>>> for Status<'a>
@@ -282,9 +267,14 @@ where
         let id = connection.node.id_string.as_str();
         let transport = connection.node.transport;
         let encoding = connection.node.encoding;
-        let network = connection.node.network;
+        let network = &connection.node.network;
         let status = connection.status();
         let online = connection.online();
+        let clients = connection.clients();
+        let (capacity, cores) = connection
+            .caps()
+            .map(|caps| (caps.socket_capacity, caps.core_num))
+            .unwrap_or((0, 0));
         Self {
             id,
             url,
@@ -293,8 +283,11 @@ where
             transport,
             encoding,
             network,
+            cores,
             status,
             online,
+            clients,
+            capacity,
         }
     }
 }

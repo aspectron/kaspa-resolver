@@ -10,35 +10,35 @@ edition = "2021"
 
 [dependencies]
 
-workflow-core = { path = "../workflow-rs/core" }
-workflow-http = { path = "../workflow-rs/http" }
-workflow-log = { path = "../workflow-rs/log" }
-workflow-serializer = { path = "../workflow-rs/serializer" }
-workflow-rpc = { path = "../workflow-rs/rpc" }
-workflow-encryption = { path = "../workflow-rs/encryption" }
-
-# workflow-core = "0.13.3"
-# workflow-http = "0.13.3"
-# workflow-log = "0.13.3"
-# workflow-serializer = "0.13.3"
-# workflow-rpc = "0.13.3"
+# workflow-core = { path = "../workflow-rs/core" }
+# workflow-http = { path = "../workflow-rs/http" }
+# workflow-log = { path = "../workflow-rs/log" }
+# workflow-serializer = { path = "../workflow-rs/serializer" }
+# workflow-rpc = { path = "../workflow-rs/rpc" }
 # workflow-encryption = { path = "../workflow-rs/encryption" }
 
-kaspa-consensus-core = { path = "../rusty-kaspa/consensus/core" }
-kaspa-rpc-core = { path = "../rusty-kaspa/rpc/core" }
-kaspa-utils = { path = "../rusty-kaspa/utils" }
-kaspa-wrpc-client = { path = "../rusty-kaspa/rpc/wrpc/client" }
+workflow-core = "0.14.0"
+workflow-http = "0.14.0"
+workflow-log = "0.14.0"
+workflow-serializer = "0.14.0"
+workflow-rpc = "0.14.0"
+workflow-encryption = "0.14.0"
 
-# kaspa-consensus-core = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "sparkle" }
-# kaspa-rpc-core = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "sparkle" }
-# kaspa-utils = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "sparkle" }
-# kaspa-wrpc-client = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "sparkle" }
+# kaspa-consensus-core = { path = "../rusty-kaspa/consensus/core" }
+# kaspa-rpc-core = { path = "../rusty-kaspa/rpc/core" }
+# kaspa-utils = { path = "../rusty-kaspa/utils" }
+# kaspa-wrpc-client = { path = "../rusty-kaspa/rpc/wrpc/client" }
 
-sparkle-rpc-core = { path = "../sparkle/rpc/core" }
-sparkle-rpc-client = { path = "../sparkle/rpc/client" }
+kaspa-consensus-core = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "omega" }
+kaspa-rpc-core = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "omega" }
+kaspa-utils = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "omega" }
+kaspa-wrpc-client = { git = "https://github.com/aspectron/rusty-kaspa.git", branch = "omega" }
 
-# sparkle-rpc-core = { git = "https://github.com/aspectron/sparkle.git", branch = "master" }
-# sparkle-rpc-client = { git = "https://github.com/aspectron/sparkle.git", branch = "master" }
+# sparkle-rpc-core = { path = "../sparkle/rpc/core" }
+# sparkle-rpc-client = { path = "../sparkle/rpc/client" }
+
+sparkle-rpc-core = { git = "https://github.com/aspectron/sparkle.git", branch = "omega" }
+sparkle-rpc-client = { git = "https://github.com/aspectron/sparkle.git", branch = "omega" }
 
 ahash = "0.8.6"
 async-trait = "0.1.51"

@@ -3,17 +3,18 @@ pub mod sparkle;
 
 use crate::imports::*;
 
-#[allow(dead_code)]
-const TARGET_RAM: u64 = 1024 * 1024 * 1024 * 16;
-
 const SOCKETS_PER_CORE: u32 = 1024;
 
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Caps {
+    // current memory usage in bytes
     pub resident_set_size: u64,
+    // number of cores
     pub core_num: u64,
+    // number of utilized file descriptors
     pub fd_num: u64,
+    // number of available sockets
     pub socket_capacity: u64,
 }
 
