@@ -23,9 +23,14 @@ pub struct Connection<T>
 where
     T: rpc::Client + Send + Sync + 'static,
 {
+    sibling: Arc<Mutex<Option<Delegate>>>,
     pub node: Arc<Node>,
     monitor: Arc<Monitor<T>>,
     params: PathParams,
+    // sibling represents a node that offers additional protocol support
+    // in which case wRPC Borsh connection is a sibling to this connection
+    has_sibling: AtomicBool,
+    // transport_kind: TransportKind,
     client: T,
     shutdown_ctl: DuplexChannel<()>,
     caps: OnceLock<Caps>,
@@ -33,6 +38,7 @@ where
     is_synced: AtomicBool,
     is_online: AtomicBool,
     clients: AtomicU64,
+    // delegate: AtomicBool,
     args: Arc<Args>,
 }
 
@@ -47,11 +53,18 @@ where
         args: &Arc<Args>,
     ) -> Result<Self> {
         let params = node.params();
-        let client = T::try_new(node.encoding, &node.address)?;
+        // let transport_kind = node.transport_kind;
+        let encoding = node
+            .transport_kind
+            .wrpc_encoding()
+            .ok_or(Error::ConnectionProtocolEncoding)?;
+        let client = T::try_new(encoding, &node.address)?;
         Ok(Self {
             monitor,
             params,
             node,
+            sibling: Arc::new(Mutex::new(None)),
+            has_sibling: AtomicBool::new(false),
             client,
             shutdown_ctl: DuplexChannel::oneshot(),
             caps: OnceLock::new(),
@@ -59,10 +72,12 @@ where
             is_synced: AtomicBool::new(false),
             is_online: AtomicBool::new(false),
             clients: AtomicU64::new(0),
+            // delegate: AtomicBool::new(false),
             args: args.clone(),
         })
     }
 
+    #[inline]
     pub fn verbose(&self) -> bool {
         self.args.verbose
     }
@@ -107,6 +122,15 @@ where
         self.caps.get()
     }
 
+    pub fn set_sibling(&self, sibling: Option<Delegate>) {
+        self.has_sibling.store(sibling.is_some(), Ordering::Relaxed);
+        *self.sibling.lock().unwrap() = sibling;
+    }
+
+    pub fn sibling(&self) -> Option<Delegate> {
+        self.sibling.lock().unwrap().clone()
+    }
+
     pub fn status(&self) -> &'static str {
         if self.connected() {
             if self.is_synced() {
@@ -144,7 +168,7 @@ where
                 _ = interval.next().fuse() => {
                     if self.is_connected.load(Ordering::Relaxed) {
                         let previous = self.is_online.load(Ordering::Relaxed);
-                        let online = self.update_metrics().await.is_ok();
+                        let online = self.update_state().await.is_ok();
                         self.is_online.store(online, Ordering::Relaxed);
                         if online != previous {
                             if self.verbose() {
@@ -164,7 +188,7 @@ where
                                 Ctl::Connect => {
                                     log_success!("Connected","{}",self.node.address);
                                     self.is_connected.store(true, Ordering::Relaxed);
-                                    if self.update_metrics().await.is_ok() {
+                                    if self.update_state().await.is_ok() {
                                         self.is_online.store(true, Ordering::Relaxed);
                                         self.update();
                                     } else {
@@ -217,9 +241,10 @@ where
         Ok(())
     }
 
-    async fn update_metrics(self: &Arc<Self>) -> Result<()> {
+    async fn update_state(self: &Arc<Self>) -> Result<()> {
         if self.caps.get().is_none() {
             let caps = self.client.get_caps().await?;
+
             self.caps.set(caps).unwrap();
         }
 
@@ -275,11 +300,10 @@ where
 pub struct Output<'a> {
     pub id: &'a str,
     pub url: &'a str,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provider_name: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provider_url: Option<&'a str>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // pub provider_name: Option<&'a str>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // pub provider_url: Option<&'a str>,
 }
 
 impl<'a, T> From<&'a Arc<Connection<T>>> for Output<'a>
@@ -289,24 +313,24 @@ where
     fn from(connection: &'a Arc<Connection<T>>) -> Self {
         let id = connection.node.id_string.as_str();
         let url = connection.node.address.as_str();
-        let provider_name = connection
-            .node
-            .provider
-            .as_ref()
-            .map(|provider| provider.name.as_str());
-        let provider_url = connection
-            .node
-            .provider
-            .as_ref()
-            .map(|provider| provider.url.as_str());
+        // let provider_name = connection
+        //     .node
+        //     .provider
+        //     .as_ref()
+        //     .map(|provider| provider.name.as_str());
+        // let provider_url = connection
+        //     .node
+        //     .provider
+        //     .as_ref()
+        //     .map(|provider| provider.url.as_str());
 
         // let provider_name = connection.node.provider.as_deref();
         // let provider_url = connection.node.link.as_deref();
         Self {
             id,
             url,
-            provider_name,
-            provider_url,
+            // provider_name,
+            // provider_url,
         }
     }
 }

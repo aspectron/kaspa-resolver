@@ -1,6 +1,4 @@
 use crate::imports::*;
-// use serde::{de, Deserializer, Serializer};
-// use std::{fmt, str::FromStr};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -12,18 +10,29 @@ pub enum Tls {
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct PathParams {
-    pub encoding: WrpcEncoding,
+    pub transport_kind: TransportKind,
     pub network: NetworkId,
+    pub tls: bool,
 }
 
 impl PathParams {
-    pub fn new(encoding: WrpcEncoding, network: NetworkId) -> Self {
-        Self { encoding, network }
+    pub fn new(transport_kind: TransportKind, tls: bool, network: NetworkId) -> Self {
+        Self {
+            transport_kind,
+            tls,
+            network,
+        }
     }
 
     pub fn iter() -> impl Iterator<Item = PathParams> {
         NetworkId::iter().flat_map(move |network_id| {
-            WrpcEncoding::iter().map(move |encoding| PathParams::new(*encoding, network_id))
+            TransportKind::iter()
+                .map(move |transport_kind| PathParams::new(*transport_kind, true, network_id))
+                .chain(
+                    TransportKind::iter().map(move |transport_kind| {
+                        PathParams::new(*transport_kind, false, network_id)
+                    }),
+                )
         })
     }
 }
@@ -32,8 +41,9 @@ impl fmt::Display for PathParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{}:{}",
-            self.encoding.to_string().to_lowercase(),
+            "{}:{}:{}",
+            self.transport_kind.protocol(),
+            self.transport_kind.encoding(),
             self.network
         )
     }

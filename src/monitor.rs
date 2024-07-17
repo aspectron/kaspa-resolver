@@ -8,8 +8,8 @@ where
     T: rpc::Client + Send + Sync + 'static,
 {
     args: Arc<Args>,
-    name: &'static str,
     connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection<T>>>>>,
+    delegates: RwLock<AHashMap<Vec<u8>, Arc<Connection<T>>>>,
     sorts: AHashMap<PathParams, AtomicBool>,
     channel: Channel<PathParams>,
     shutdown_ctl: DuplexChannel<()>,
@@ -34,11 +34,12 @@ impl<T> Monitor<T>
 where
     T: rpc::Client + Send + Sync + 'static,
 {
-    pub fn new(name: &'static str) -> Self {
+    pub fn new() -> Self {
         Self {
             args: Arc::new(Args::default()),
-            name,
+            // name,
             connections: Default::default(),
+            delegates: Default::default(),
             sorts: Default::default(),
             channel: Channel::unbounded(),
             shutdown_ctl: DuplexChannel::oneshot(),
@@ -57,7 +58,7 @@ where
     }
 
     /// Process an update to `Server.toml` removing or adding node connections accordingly.
-    pub async fn update_nodes(self: &Arc<Self>, nodes: Vec<Arc<Node>>) -> Result<()> {
+    pub async fn update_nodes(self: &Arc<Self>, nodes: &[Arc<Node>]) -> Result<()> {
         let mut connections = self.connections();
 
         for params in PathParams::iter() {
@@ -96,18 +97,42 @@ where
             }
         }
 
+        // let targets = connections.values().flatten().cloned().collect::<Vec<_>>();
+        let targets = AHashMap::group_from(
+            connections
+                .values()
+                .flatten()
+                .map(|c| (c.node.network_node_uid(), c.node.transport_kind, c.clone())),
+        ); //.collect::<Vec<_>>();
+
+        for (_network_uid, transport_map) in targets.iter() {
+            if let Some(wrpc_borsh) = transport_map.get(&TransportKind::WrpcBorsh) {
+                if let Some(wrpc_json) = transport_map.get(&TransportKind::WrpcJson) {
+                    wrpc_json.set_sibling(Some(wrpc_borsh.clone().into()));
+                } else if let Some(grpc) = transport_map.get(&TransportKind::Grpc) {
+                    grpc.set_sibling(Some(wrpc_borsh.clone().into()));
+                }
+            }
+        }
+
         *self.connections.write().unwrap() = connections;
 
         // flush all params to the update channel to refresh selected descriptors
-        PathParams::iter().for_each(|param| self.channel.sender.try_send(param).unwrap());
+        // PathParams::iter().for_each(|param| self.channel.sender.try_send(param).unwrap());
 
         Ok(())
     }
 
-    pub async fn start(self: &Arc<Self>) -> Result<()> {
-        let filename = format!("{}.toml", self.name);
-        let toml = std::fs::read_to_string(Path::new(&filename))?;
-        let nodes = crate::node::try_parse_nodes(toml.as_str())?;
+    pub async fn start(self: &Arc<Self>, nodes: &mut Vec<Arc<Node>>) -> Result<()> {
+        let mut list = Vec::new();
+        nodes.retain(|node| {
+            if node.service() == T::service() {
+                list.push(node.clone());
+                false
+            } else {
+                true
+            }
+        });
 
         let this = self.clone();
         spawn(async move {
@@ -116,7 +141,7 @@ where
             }
         });
 
-        self.update_nodes(nodes).await?;
+        self.update_nodes(&list).await?;
 
         Ok(())
     }
@@ -234,12 +259,9 @@ where
 pub struct Status<'a> {
     pub id: &'a str,
     pub url: &'a str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provider_name: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provider_url: Option<&'a str>,
-    pub transport: Transport,
-    pub encoding: WrpcEncoding,
+    pub protocol: &'static str,
+    pub encoding: &'static str,
+    pub tls: bool,
     pub network: &'a NetworkId,
     pub cores: u64,
     pub online: bool,
@@ -254,34 +276,29 @@ where
 {
     fn from(connection: &'a Arc<Connection<T>>) -> Self {
         let url = connection.node.address.as_str();
-        let provider_name = connection
-            .node
-            .provider
-            .as_ref()
-            .map(|provider| provider.name.as_str());
-        let provider_url = connection
-            .node
-            .provider
-            .as_ref()
-            .map(|provider| provider.url.as_str());
-        let id = connection.node.id_string.as_str();
-        let transport = connection.node.transport;
-        let encoding = connection.node.encoding;
+        let protocol = connection.node.transport_kind.protocol();
+        let encoding = connection.node.transport_kind.encoding();
+        let tls = connection.node.tls;
         let network = &connection.node.network;
         let status = connection.status();
         let online = connection.online();
         let clients = connection.clients();
-        let (capacity, cores) = connection
+        let (id, capacity, cores) = connection
             .caps()
-            .map(|caps| (caps.socket_capacity, caps.core_num))
-            .unwrap_or((0, 0));
+            .map(|caps| {
+                (
+                    caps.hex_id.as_str(),
+                    caps.socket_capacity,
+                    caps.cpu_physical_cores,
+                )
+            })
+            .unwrap_or(("n/a", 0, 0));
         Self {
             id,
             url,
-            provider_name,
-            provider_url,
-            transport,
+            protocol,
             encoding,
+            tls,
             network,
             cores,
             status,

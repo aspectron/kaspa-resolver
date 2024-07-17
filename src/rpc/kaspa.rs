@@ -1,17 +1,25 @@
 use super::Caps;
 use crate::imports::*;
+use kaspa_rpc_core::GetSystemInfoResponse;
 pub use kaspa_wrpc_client::{
     // client::{ConnectOptions, ConnectStrategy},
     KaspaRpcClient,
     //  WrpcEncoding,
 };
 
+// pub use GetSystemInfoResponse;
+
+#[derive(Debug)]
 pub struct Client {
     client: KaspaRpcClient,
 }
 
 #[async_trait]
 impl rpc::Client for Client {
+    fn service() -> Service {
+        Service::Kaspa
+    }
+
     fn try_new(encoding: WrpcEncoding, url: &str) -> Result<Self> {
         let client = KaspaRpcClient::new(encoding, Some(url), None, None, None)?;
 
@@ -28,19 +36,21 @@ impl rpc::Client for Client {
     }
 
     async fn get_caps(&self) -> Result<Caps> {
-        let metrics = self
-            .client
-            .get_metrics(true, false, false, false, false, false)
-            .await?;
-        let process_metrics = metrics.process_metrics.ok_or(Error::Metrics)?;
-        let socket_capacity = process_metrics
-            .fd_num
-            .min(process_metrics.core_num * rpc::SOCKETS_PER_CORE)
-            as u64;
+        let GetSystemInfoResponse {
+            system_id,
+            cpu_physical_cores,
+            total_memory,
+            fd_limit,
+        } = self.client.get_system_info().await?;
+        let cpu_physical_cores = cpu_physical_cores as u64;
+        let fd_limit = fd_limit as u64;
+        let socket_capacity = fd_limit.min(cpu_physical_cores * rpc::SOCKETS_PER_CORE);
         Ok(Caps {
-            resident_set_size: process_metrics.resident_set_size,
-            core_num: process_metrics.core_num as u64,
-            fd_num: process_metrics.fd_num as u64,
+            hex_id: system_id.to_hex(),
+            system_id,
+            total_memory,
+            cpu_physical_cores,
+            fd_limit,
             socket_capacity,
         })
     }

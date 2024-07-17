@@ -17,26 +17,34 @@ use tower_http::cors::{Any, CorsLayer};
 
 struct Inner {
     http_server: Mutex<Option<(TcpListener, Router)>>,
+    nodes: Mutex<Vec<Arc<Node>>>,
     kaspa: Arc<Monitor<rpc::kaspa::Client>>,
     sparkle: Arc<Monitor<rpc::sparkle::Client>>,
 }
 
-impl Default for Inner {
-    fn default() -> Self {
+impl Inner {
+    fn new(nodes: Vec<Arc<Node>>) -> Self {
         Self {
             http_server: Default::default(),
-            kaspa: Arc::new(Monitor::new("kaspa")),
-            sparkle: Arc::new(Monitor::new("sparkle")),
+            nodes: Mutex::new(nodes),
+            kaspa: Arc::new(Monitor::new()),
+            sparkle: Arc::new(Monitor::new()),
         }
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct Resolver {
     inner: Arc<Inner>,
 }
 
 impl Resolver {
+    pub fn try_new(nodes: Vec<Arc<Node>>) -> Result<Self> {
+        Ok(Self {
+            inner: Arc::new(Inner::new(nodes)),
+        })
+    }
+
     pub async fn init_http_server(self: &Arc<Self>, args: &Args) -> Result<()> {
         let router = Router::new();
 
@@ -125,9 +133,14 @@ impl Resolver {
         Ok(())
     }
 
+    pub fn nodes(&self) -> Vec<Arc<Node>> {
+        self.inner.nodes.lock().unwrap().clone()
+    }
+
     pub async fn start(self: &Arc<Self>) -> Result<()> {
-        self.inner.kaspa.start().await?;
-        self.inner.sparkle.start().await?;
+        let mut nodes = self.nodes();
+        self.inner.kaspa.start(&mut nodes).await?;
+        self.inner.sparkle.start(&mut nodes).await?;
         Ok(())
     }
 
@@ -142,12 +155,9 @@ impl Resolver {
         let kaspa = self.inner.kaspa.get_all();
 
         let sparkle = self.inner.sparkle.get_all();
-        // .iter()
-        // .map(Output::from)
 
         let status = kaspa
             .iter()
-            // .iter()
             .map(Output::from)
             .chain(sparkle.iter().map(Output::from))
             .collect::<Vec<_>>();

@@ -1,11 +1,17 @@
 use crate::imports::*;
 use sparkle_rpc_client::prelude::SparkleRpcClient;
+
+#[derive(Debug)]
 pub struct Client {
     client: SparkleRpcClient,
 }
 
 #[async_trait]
 impl rpc::Client for Client {
+    fn service() -> Service {
+        Service::Sparkle
+    }
+
     fn try_new(encoding: WrpcEncoding, url: &str) -> Result<Self> {
         let client = SparkleRpcClient::try_new(url, Some(encoding))?;
 

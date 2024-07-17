@@ -6,3 +6,4 @@ analyzer-target
 *.code-workspace
 release
 Servers.toml
+/*.toml

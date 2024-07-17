@@ -1,11 +1,4 @@
 use crate::imports::*;
-use xxhash_rust::xxh3::xxh3_64;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Provider {
-    pub name: String,
-    pub url: String,
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Node {
@@ -14,16 +7,18 @@ pub struct Node {
     #[serde(skip)]
     pub id_string: String,
 
-    pub name: Option<String>,
-    pub location: Option<String>,
+    pub service: Service,
     pub address: String,
-    pub transport: Transport,
-    pub encoding: WrpcEncoding,
+    #[serde(rename = "transport-type")]
+    pub transport_kind: TransportKind,
+    pub tls: bool,
     pub network: NetworkId,
     pub enable: Option<bool>,
-    pub bias: Option<f64>,
-    pub version: Option<String>,
-    pub provider: Option<Provider>,
+
+    pub fqdn: String,
+    // contains hash(fqdn+network_id)
+    network_node_uid: u64,
+    // pub delegate: Option<Arc<Node>>,
 }
 
 impl Eq for Node {}
@@ -36,36 +31,60 @@ impl PartialEq for Node {
 
 impl std::fmt::Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let title = self.name.clone().unwrap_or(self.address.to_string());
+        let title = self.address.to_string();
         write!(f, "{}", title)
     }
 }
 
 impl Node {
-    pub fn params(&self) -> PathParams {
-        PathParams::new(self.encoding, self.network)
+    pub fn new<S1, S2>(
+        service: &Service,
+        network: NetworkId,
+        transport: &Transport,
+        fqdn: S1,
+        address: S2,
+        // delegate : Option<Arc<Node>>,
+    ) -> Arc<Self>
+    where
+        S1: Display,
+        S2: Display,
+    {
+        let address = address.to_string();
+        let fqdn = fqdn.to_string();
+        let id = xxh3_64(address.as_bytes());
+        let id_string = format!("{id:x}");
+
+        let network_node_uid = xxh3_64(format!("{fqdn}{network}").as_bytes());
+
+        let Transport { tls, kind, .. } = transport;
+
+        let node = Self {
+            id,
+            id_string,
+            service: *service,
+            tls: *tls,
+            fqdn,
+            address,
+            transport_kind: *kind,
+            network,
+            enable: None,
+            network_node_uid,
+        };
+
+        Arc::new(node)
     }
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct NodeConfig {
-    #[serde(rename = "node")]
-    nodes: Vec<Node>,
-}
+    pub fn params(&self) -> PathParams {
+        PathParams::new(self.transport_kind, self.tls, self.network)
+    }
 
-pub fn try_parse_nodes(toml: &str) -> Result<Vec<Arc<Node>>> {
-    let nodes: Vec<Arc<Node>> = toml::from_str::<NodeConfig>(toml)?
-        .nodes
-        .into_iter()
-        .filter_map(|mut node| {
-            let id = xxh3_64(node.address.as_bytes());
-            let id_string = format!("{id:x}");
-            node.id = id;
-            node.id_string = id_string.chars().take(8).collect();
-            node.enable.unwrap_or(true).then_some(node).map(Arc::new)
-        })
-        .collect::<Vec<_>>();
-    Ok(nodes)
+    pub fn service(&self) -> Service {
+        self.service
+    }
+
+    pub fn network_node_uid(&self) -> u64 {
+        self.network_node_uid
+    }
 }
 
 impl AsRef<Node> for Node {

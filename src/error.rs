@@ -40,6 +40,12 @@ pub enum Error {
 
     #[error(transparent)]
     KaspaRpc(#[from] kaspa_rpc_core::RpcError),
+
+    #[error("Incompatible connection protocol encoding")]
+    ConnectionProtocolEncoding,
+
+    #[error("Configuration error")]
+    Config(String),
 }
 
 // impl Error {
@@ -47,6 +53,12 @@ pub enum Error {
 //         Error::Custom(msg.to_string())
 //     }
 // }
+
+impl Error {
+    pub fn config<T: std::fmt::Display>(msg: T) -> Self {
+        Error::Config(msg.to_string())
+    }
+}
 
 impl<T> From<workflow_core::channel::SendError<T>> for Error {
     fn from(_: workflow_core::channel::SendError<T>) -> Self {

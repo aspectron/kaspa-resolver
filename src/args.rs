@@ -23,6 +23,10 @@ pub struct Args {
     /// Enable resolver status access via `/status`
     #[arg(long, default_value = "false")]
     pub status: bool,
+
+    /// Test configuration
+    #[arg(short, long, default_value = "false")]
+    pub test: bool,
 }
 
 #[derive(Clone, Debug)]
