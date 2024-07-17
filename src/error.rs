@@ -46,6 +46,9 @@ pub enum Error {
 
     #[error("Configuration error")]
     Config(String),
+
+    #[error(transparent)]
+    TryFromSlice(#[from] std::array::TryFromSliceError),
 }
 
 // impl Error {

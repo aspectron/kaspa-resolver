@@ -1,6 +1,5 @@
 pub use crate::args::Args;
 pub use crate::connection::{Connection, Output};
-pub use crate::delegate::*;
 pub use crate::error::Error;
 pub use crate::group::*;
 pub use crate::log::*;
@@ -27,11 +26,12 @@ pub use workflow_rpc::client::{ConnectOptions, ConnectStrategy, Ctl};
 pub use workflow_rpc::encoding::Encoding as WrpcEncoding;
 
 pub use ahash::AHashMap;
+pub use arc_swap::ArcSwap;
 pub use async_trait::async_trait;
 pub use futures::{pin_mut, select, FutureExt, StreamExt};
 pub use kaspa_consensus_core::network::NetworkId;
 pub use kaspa_rpc_core::api::rpc::RpcApi;
-pub use kaspa_utils::hex::*;
+// pub use kaspa_utils::hex::*;
 pub use rand::Rng;
 pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 pub use std::collections::{HashMap, HashSet};
@@ -43,3 +43,8 @@ pub use std::sync::OnceLock;
 pub use std::sync::{Arc, Mutex, RwLock};
 pub use std::time::Duration;
 pub use xxhash_rust::xxh3::xxh3_64;
+
+// #[macro_use]
+// extern crate serde_derive;
+// extern crate serde_hex;
+pub use serde_hex::{SerHex, StrictPfx};

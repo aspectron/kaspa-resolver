@@ -9,9 +9,10 @@ const SOCKETS_PER_CORE: u64 = 1024;
 #[derive(Debug)]
 pub struct Caps {
     // node id
-    pub system_id: Vec<u8>,
+    // pub system_id: Vec<u8>,
     // node id in hex
-    pub hex_id: String,
+    // pub hex_id: String,
+    pub system_id: u64,
     // current memory usage in bytes
     pub total_memory: u64,
     // number of cores

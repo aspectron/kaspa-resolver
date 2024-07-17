@@ -45,8 +45,10 @@ impl rpc::Client for Client {
         let cpu_physical_cores = cpu_physical_cores as u64;
         let fd_limit = fd_limit as u64;
         let socket_capacity = fd_limit.min(cpu_physical_cores * rpc::SOCKETS_PER_CORE);
+        // let system_id = u128::from_be_bytes(system_id[0..16].try_into()?);
+        let system_id = u64::from_be_bytes(system_id[0..8].try_into()?);
         Ok(Caps {
-            hex_id: system_id.to_hex(),
+            // hex_id: system_id.to_hex(),
             system_id,
             total_memory,
             cpu_physical_cores,

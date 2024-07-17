@@ -1,0 +1,117 @@
+[transport.tls-wrpc-borsh]
+type = "wrpc-borsh"
+tls = true
+template = "wss://${fqdn}/${service}/${network}/${protocol}/${encoding}"
+
+[transport.tls-wrpc-json]
+type = "wrpc-json"
+tls = true
+template = "wss://${fqdn}/${service}/${network}/${protocol}/${encoding}"
+
+[transport.notls-wrpc-borsh]
+type = "wrpc-borsh"
+tls = false
+template = "ws://${fqdn}/${service}/${network}/${protocol}/${encoding}"
+
+[distribution.standard]
+mainnet = { prefix = "n", nodes = 8}
+testnet-10 = { prefix = "a", nodes = 4}
+testnet-11 = { prefix = "b", nodes = 4}
+
+[distribution.small]
+mainnet = { prefix = "n", nodes = 8, transports = ["wrpc-borsh"]}
+testnet-10 = { prefix = "a", nodes = 4}
+testnet-11 = { prefix = "b", nodes = 4}
+
+[[group]]
+enable = true
+services = ["kaspa","sparkle"]
+fqdn = "*.kaspa-ng.org"
+transports = ["tls-wrpc-borsh","tls-wrpc-json"]
+distribution = "standard"
+
+[[group]]
+enable = false
+fqdn = "*.kaspa-ng.io"
+transports = ["wrpc"]
+encoding = ["borsh","json"]
+distribution = "standard"
+
+[[node]]
+address = "wss://eu-1.kaspa-ng.org/${network}"
+tls = true
+transport-type = ["wrpc-borsh"]
+# encoding = ["borsh"]
+networks = ["mainnet","testnet-10","testnet-11"]
+
+# [[node]]
+# name = "kaspa-ng.org"
+# location = "EU"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "mainnet"
+# address = "wss://eu-1.kaspa-ng.org/mainnet"
+
+# [[node]]
+# name = "kaspa-ng.org"
+# location = "EU"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "testnet-10"
+# address = "wss://eu-1.kaspa-ng.org/testnet-10"
+
+# [[node]]
+# name = "kaspa-ng.org"
+# location = "EU"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "testnet-11"
+# address = "wss://eu-1.kaspa-ng.org/testnet-11"
+
+# [[node]]
+# name = "kaspa-ng.org"
+# location = "US"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "mainnet"
+# address = "wss://us-1.kaspa-ng.org/mainnet"
+
+# [[node]]
+# name = "kaspa-ng.org"
+# location = "US"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "testnet-10"
+# address = "wss://us-1.kaspa-ng.org/testnet-10"
+
+# [[node]]
+# name = "kaspa-ng.org"
+# location = "US"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "testnet-11"
+# address = "wss://us-1.kaspa-ng.org/testnet-11"
+
+# [[node]]
+# name = "kaspa-ng.io"
+# location = "EU"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "mainnet"
+# address = "wss://eu-1.kaspa-ng.io/mainnet"
+
+# [[node]]
+# name = "kaspa-ng.io"
+# location = "EU"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "testnet-10"
+# address = "wss://eu-1.kaspa-ng.io/testnet-10"
+
+# [[node]]
+# name = "kaspa-ng.io"
+# location = "EU"
+# transport = "wrpc"
+# encoding = "borsh"
+# network = "testnet-11"
+# address = "wss://eu-1.kaspa-ng.io/testnet-11"

@@ -9,7 +9,7 @@ where
 {
     args: Arc<Args>,
     connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection<T>>>>>,
-    delegates: RwLock<AHashMap<Vec<u8>, Arc<Connection<T>>>>,
+    // delegates: RwLock<AHashMap<Vec<u8>, Arc<Connection<T>>>>,
     sorts: AHashMap<PathParams, AtomicBool>,
     channel: Channel<PathParams>,
     shutdown_ctl: DuplexChannel<()>,
@@ -39,7 +39,7 @@ where
             args: Arc::new(Args::default()),
             // name,
             connections: Default::default(),
-            delegates: Default::default(),
+            // delegates: Default::default(),
             sorts: Default::default(),
             channel: Channel::unbounded(),
             shutdown_ctl: DuplexChannel::oneshot(),
@@ -108,9 +108,11 @@ where
         for (_network_uid, transport_map) in targets.iter() {
             if let Some(wrpc_borsh) = transport_map.get(&TransportKind::WrpcBorsh) {
                 if let Some(wrpc_json) = transport_map.get(&TransportKind::WrpcJson) {
-                    wrpc_json.set_sibling(Some(wrpc_borsh.clone().into()));
+                    wrpc_json.set_context(wrpc_borsh.context());
+                    // wrpc_json.set_sibling(Some(wrpc_borsh.clone().into()));
                 } else if let Some(grpc) = transport_map.get(&TransportKind::Grpc) {
-                    grpc.set_sibling(Some(wrpc_borsh.clone().into()));
+                    grpc.set_context(wrpc_borsh.context());
+                    // grpc.set_sibling(Some(wrpc_borsh.clone().into()));
                 }
             }
         }
@@ -257,7 +259,8 @@ where
 
 #[derive(Serialize)]
 pub struct Status<'a> {
-    pub id: &'a str,
+    #[serde(with = "SerHex::<StrictPfx>")]
+    pub id: u64,
     pub url: &'a str,
     pub protocol: &'static str,
     pub encoding: &'static str,
@@ -284,15 +287,17 @@ where
         let online = connection.online();
         let clients = connection.clients();
         let (id, capacity, cores) = connection
+            // .context()
             .caps()
+            .get()
             .map(|caps| {
                 (
-                    caps.hex_id.as_str(),
+                    caps.system_id,
                     caps.socket_capacity,
                     caps.cpu_physical_cores,
                 )
             })
-            .unwrap_or(("n/a", 0, 0));
+            .unwrap_or((0, 0, 0));
         Self {
             id,
             url,

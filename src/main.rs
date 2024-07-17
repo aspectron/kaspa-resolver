@@ -1,7 +1,6 @@
 mod args;
 mod config;
 mod connection;
-mod delegate;
 mod error;
 mod group;
 mod imports;

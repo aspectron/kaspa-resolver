@@ -19,26 +19,35 @@ where
 }
 
 #[derive(Debug)]
+pub struct Context {
+    caps: Arc<OnceLock<Caps>>,
+    is_synced: AtomicBool,
+    clients: AtomicU64,
+}
+
+impl Context {
+    pub fn new() -> Self {
+        Self {
+            caps: Arc::new(OnceLock::new()),
+            is_synced: AtomicBool::new(false),
+            clients: AtomicU64::new(0),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Connection<T>
 where
     T: rpc::Client + Send + Sync + 'static,
 {
-    sibling: Arc<Mutex<Option<Delegate>>>,
+    context: ArcSwap<Context>,
     pub node: Arc<Node>,
     monitor: Arc<Monitor<T>>,
     params: PathParams,
-    // sibling represents a node that offers additional protocol support
-    // in which case wRPC Borsh connection is a sibling to this connection
-    has_sibling: AtomicBool,
-    // transport_kind: TransportKind,
     client: T,
     shutdown_ctl: DuplexChannel<()>,
-    caps: OnceLock<Caps>,
     is_connected: AtomicBool,
-    is_synced: AtomicBool,
     is_online: AtomicBool,
-    clients: AtomicU64,
-    // delegate: AtomicBool,
     args: Arc<Args>,
 }
 
@@ -53,26 +62,23 @@ where
         args: &Arc<Args>,
     ) -> Result<Self> {
         let params = node.params();
-        // let transport_kind = node.transport_kind;
         let encoding = node
             .transport_kind
             .wrpc_encoding()
             .ok_or(Error::ConnectionProtocolEncoding)?;
         let client = T::try_new(encoding, &node.address)?;
+
+        let context = Arc::new(Context::new());
+
         Ok(Self {
+            context: ArcSwap::new(context),
             monitor,
             params,
             node,
-            sibling: Arc::new(Mutex::new(None)),
-            has_sibling: AtomicBool::new(false),
             client,
             shutdown_ctl: DuplexChannel::oneshot(),
-            caps: OnceLock::new(),
             is_connected: AtomicBool::new(false),
-            is_synced: AtomicBool::new(false),
             is_online: AtomicBool::new(false),
-            clients: AtomicU64::new(0),
-            // delegate: AtomicBool::new(false),
             args: args.clone(),
         })
     }
@@ -84,17 +90,18 @@ where
 
     #[inline]
     pub fn score(&self) -> u64 {
-        self.clients.load(Ordering::Relaxed) // * self.bias / BIAS_SCALE
+        self.context.load().clients.load(Ordering::Relaxed) // * self.bias / BIAS_SCALE
     }
 
     #[inline]
     pub fn is_available(&self) -> bool {
         self.online()
             && self
+                .context
+                .load()
                 .caps
                 .get()
-                .map(|caps| caps.socket_capacity > self.clients())
-                .unwrap_or(false)
+                .is_some_and(|caps| caps.socket_capacity > self.clients())
     }
 
     #[inline]
@@ -109,27 +116,35 @@ where
 
     #[inline]
     pub fn is_synced(&self) -> bool {
-        self.is_synced.load(Ordering::Relaxed)
+        self.context.load().is_synced.load(Ordering::Relaxed)
     }
 
     #[inline]
     pub fn clients(&self) -> u64 {
-        self.clients.load(Ordering::Relaxed)
+        self.context.load().clients.load(Ordering::Relaxed)
     }
 
     #[inline]
-    pub fn caps(&self) -> Option<&Caps> {
-        self.caps.get()
+    pub fn caps(&self) -> Arc<OnceLock<Caps>> {
+        self.context.load().caps.clone() //get().cloned()
     }
 
-    pub fn set_sibling(&self, sibling: Option<Delegate>) {
-        self.has_sibling.store(sibling.is_some(), Ordering::Relaxed);
-        *self.sibling.lock().unwrap() = sibling;
+    pub fn set_context(&self, context: Arc<Context>) {
+        self.context.store(context);
     }
 
-    pub fn sibling(&self) -> Option<Delegate> {
-        self.sibling.lock().unwrap().clone()
+    pub fn context(&self) -> Arc<Context> {
+        self.context.load().clone()
     }
+
+    // pub fn set_sibling(&self, sibling: Option<Delegate>) {
+    //     self.has_sibling.store(sibling.is_some(), Ordering::Relaxed);
+    //     *self.sibling.lock().unwrap() = sibling;
+    // }
+
+    // pub fn sibling(&self) -> Option<Delegate> {
+    //     self.sibling.lock().unwrap().clone()
+    // }
 
     pub fn status(&self) -> &'static str {
         if self.connected() {
@@ -242,28 +257,30 @@ where
     }
 
     async fn update_state(self: &Arc<Self>) -> Result<()> {
-        if self.caps.get().is_none() {
+        // if self.caps.get().is_none() {
+        if self.caps().get().is_none() {
             let caps = self.client.get_caps().await?;
 
-            self.caps.set(caps).unwrap();
+            self.caps().set(caps).unwrap();
         }
 
         match self.client.get_sync().await {
             Ok(is_synced) => {
-                let previous_sync = self.is_synced.load(Ordering::Relaxed);
-                self.is_synced.store(is_synced, Ordering::Relaxed);
+                let context = self.context();
+                let previous_sync = context.is_synced.load(Ordering::Relaxed);
+                context.is_synced.store(is_synced, Ordering::Relaxed);
 
                 if is_synced {
                     match self.client.get_active_connections().await {
                         Ok(connections) => {
                             if self.verbose() {
-                                let previous = self.clients.load(Ordering::Relaxed);
+                                let previous = context.clients.load(Ordering::Relaxed);
                                 if connections != previous {
-                                    self.clients.store(connections, Ordering::Relaxed);
+                                    context.clients.store(connections, Ordering::Relaxed);
                                     log_success!("Clients", "{self}");
                                 }
                             } else {
-                                self.clients.store(connections, Ordering::Relaxed);
+                                context.clients.store(connections, Ordering::Relaxed);
                             }
 
                             Ok(())
