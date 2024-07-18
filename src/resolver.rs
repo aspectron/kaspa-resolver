@@ -17,13 +17,13 @@ use tower_http::cors::{Any, CorsLayer};
 
 struct Inner {
     http_server: Mutex<Option<(TcpListener, Router)>>,
-    nodes: Mutex<Vec<Arc<Node>>>,
+    nodes: Mutex<Vec<Arc<NodeConfig>>>,
     kaspa: Arc<Monitor<rpc::kaspa::Client>>,
     sparkle: Arc<Monitor<rpc::sparkle::Client>>,
 }
 
 impl Inner {
-    fn new(nodes: Vec<Arc<Node>>) -> Self {
+    fn new(nodes: Vec<Arc<NodeConfig>>) -> Self {
         Self {
             http_server: Default::default(),
             nodes: Mutex::new(nodes),
@@ -39,7 +39,7 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    pub fn try_new(nodes: Vec<Arc<Node>>) -> Result<Self> {
+    pub fn try_new(nodes: Vec<Arc<NodeConfig>>) -> Result<Self> {
         Ok(Self {
             inner: Arc::new(Inner::new(nodes)),
         })
@@ -133,7 +133,7 @@ impl Resolver {
         Ok(())
     }
 
-    pub fn nodes(&self) -> Vec<Arc<Node>> {
+    pub fn nodes(&self) -> Vec<Arc<NodeConfig>> {
         self.inner.nodes.lock().unwrap().clone()
     }
 

@@ -9,7 +9,7 @@ where
 {
     args: Arc<Args>,
     connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection<T>>>>>,
-    // delegates: RwLock<AHashMap<Vec<u8>, Arc<Connection<T>>>>,
+    delegates: Mutex<AHashMap<Delegate, Arc<Connection<T>>>>,
     sorts: AHashMap<PathParams, AtomicBool>,
     channel: Channel<PathParams>,
     shutdown_ctl: DuplexChannel<()>,
@@ -39,7 +39,7 @@ where
             args: Arc::new(Args::default()),
             // name,
             connections: Default::default(),
-            // delegates: Default::default(),
+            delegates: Default::default(),
             sorts: Default::default(),
             channel: Channel::unbounded(),
             shutdown_ctl: DuplexChannel::oneshot(),
@@ -53,12 +53,16 @@ where
         self.args.verbose
     }
 
+    pub fn delegates(&self) -> MutexGuard<AHashMap<Delegate, Arc<Connection<T>>>> {
+        self.delegates.lock().unwrap()
+    }
+
     pub fn connections(&self) -> AHashMap<PathParams, Vec<Arc<Connection<T>>>> {
         self.connections.read().unwrap().clone()
     }
 
     /// Process an update to `Server.toml` removing or adding node connections accordingly.
-    pub async fn update_nodes(self: &Arc<Self>, nodes: &[Arc<Node>]) -> Result<()> {
+    pub async fn update_nodes(self: &Arc<Self>, nodes: &[Arc<NodeConfig>]) -> Result<()> {
         let mut connections = self.connections();
 
         for params in PathParams::iter() {
@@ -71,12 +75,12 @@ where
 
             let create: Vec<_> = nodes
                 .iter()
-                .filter(|node| !list.iter().any(|connection| connection.node == ***node))
+                .filter(|node| !list.iter().any(|connection| connection.node() == **node))
                 .collect();
 
             let remove: Vec<_> = list
                 .iter()
-                .filter(|connection| !nodes.iter().any(|node| connection.node == **node))
+                .filter(|connection| !nodes.iter().any(|node| connection.node() == *node))
                 .cloned()
                 .collect();
 
@@ -93,26 +97,24 @@ where
 
             for removed in remove {
                 removed.stop().await?;
-                list.retain(|c| c.node != removed.node);
+                list.retain(|c| c.node() != removed.node());
             }
         }
 
-        // let targets = connections.values().flatten().cloned().collect::<Vec<_>>();
-        let targets = AHashMap::group_from(
-            connections
-                .values()
-                .flatten()
-                .map(|c| (c.node.network_node_uid(), c.node.transport_kind, c.clone())),
-        ); //.collect::<Vec<_>>();
+        let targets = AHashMap::group_from(connections.values().flatten().map(|c| {
+            (
+                c.node().network_node_uid(),
+                c.node().transport_kind(),
+                c.clone(),
+            )
+        }));
 
         for (_network_uid, transport_map) in targets.iter() {
             if let Some(wrpc_borsh) = transport_map.get(&TransportKind::WrpcBorsh) {
                 if let Some(wrpc_json) = transport_map.get(&TransportKind::WrpcJson) {
                     wrpc_json.set_context(wrpc_borsh.context());
-                    // wrpc_json.set_sibling(Some(wrpc_borsh.clone().into()));
                 } else if let Some(grpc) = transport_map.get(&TransportKind::Grpc) {
                     grpc.set_context(wrpc_borsh.context());
-                    // grpc.set_sibling(Some(wrpc_borsh.clone().into()));
                 }
             }
         }
@@ -125,7 +127,7 @@ where
         Ok(())
     }
 
-    pub async fn start(self: &Arc<Self>, nodes: &mut Vec<Arc<Node>>) -> Result<()> {
+    pub async fn start(self: &Arc<Self>, nodes: &mut Vec<Arc<NodeConfig>>) -> Result<()> {
         let mut list = Vec::new();
         nodes.retain(|node| {
             if node.service() == T::service() {
@@ -161,11 +163,11 @@ where
         let shutdown_ctl_receiver = self.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
 
-        let update = workflow_core::task::interval(Duration::from_secs(60 * 60 * 12));
-        pin_mut!(update);
+        let mut update = workflow_core::task::interval(Duration::from_secs(60 * 60 * 12));
+        // pin_mut!(update);
 
-        let interval = workflow_core::task::interval(Duration::from_millis(300));
-        pin_mut!(interval);
+        let mut interval = workflow_core::task::interval(Duration::from_millis(300));
+        // pin_mut!(interval);
 
         loop {
             select! {
@@ -259,8 +261,10 @@ where
 
 #[derive(Serialize)]
 pub struct Status<'a> {
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub id: u64,
+    #[serde(with = "SerHex::<CompactPfx>")]
+    pub uid: u64,
+    #[serde(with = "SerHex::<CompactPfx>")]
+    pub sid: u64,
     pub url: &'a str,
     pub protocol: &'static str,
     pub encoding: &'static str,
@@ -278,15 +282,17 @@ where
     T: rpc::Client + Send + Sync + 'static,
 {
     fn from(connection: &'a Arc<Connection<T>>) -> Self {
-        let url = connection.node.address.as_str();
-        let protocol = connection.node.transport_kind.protocol();
-        let encoding = connection.node.transport_kind.encoding();
-        let tls = connection.node.tls;
-        let network = &connection.node.network;
+        let node = connection.node();
+        let uid = node.uid();
+        let url = node.address.as_str();
+        let protocol = node.transport_kind.protocol();
+        let encoding = node.transport_kind.encoding();
+        let tls = node.tls;
+        let network = &node.network;
         let status = connection.status();
         let online = connection.online();
         let clients = connection.clients();
-        let (id, capacity, cores) = connection
+        let (sid, capacity, cores) = connection
             // .context()
             .caps()
             .get()
@@ -299,7 +305,8 @@ where
             })
             .unwrap_or((0, 0, 0));
         Self {
-            id,
+            uid,
+            sid,
             url,
             protocol,
             encoding,

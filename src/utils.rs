@@ -6,9 +6,7 @@ where
     K2: std::hash::Hash + Ord,
     I: IntoIterator<Item = (K1, K2, V)>,
 {
-    // fn group_from(v: I) -> AHashMap<K, Vec<V>>;
     fn group_from(v: I) -> AHashMap<K1, AHashMap<K2, V>>;
-    // fn group_map_from(v: I) -> AHashMap<K, Vec<V>>;
 }
 
 impl<K1, K2, V, I> GroupExtension<K1, K2, V, I> for AHashMap<K1, AHashMap<K2, V>>

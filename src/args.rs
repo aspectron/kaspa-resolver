@@ -16,6 +16,10 @@ pub struct Args {
     #[arg(short, long, default_value = "false")]
     pub verbose: bool,
 
+    /// Tracing mode
+    #[arg(long, default_value = "false")]
+    pub trace: bool,
+
     /// Show node data on each election
     #[arg(short, long, default_value = "false")]
     pub election: bool,

@@ -23,6 +23,12 @@ pub struct Caps {
     pub socket_capacity: u64,
 }
 
+impl Caps {
+    pub fn system_id(&self) -> u64 {
+        self.system_id
+    }
+}
+
 #[async_trait]
 pub trait Client: std::fmt::Debug + Sized + Send + Sync + 'static {
     fn try_new(_encoding: WrpcEncoding, _url: &str) -> Result<Self> {
@@ -35,7 +41,8 @@ pub trait Client: std::fmt::Debug + Sized + Send + Sync + 'static {
         todo!()
     }
 
-    async fn connect(&self, _options: ConnectOptions) -> Result<()> {
+    // async fn connect(&self, _options: ConnectOptions) -> Result<()> {
+    async fn connect(&self) -> Result<()> {
         todo!()
     }
 

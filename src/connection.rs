@@ -11,7 +11,7 @@ where
         write!(
             f,
             "{}: [{:>3}] {}",
-            self.node.id_string,
+            self.node.uid_as_str(),
             self.clients(),
             self.node.address
         )
@@ -40,12 +40,14 @@ pub struct Connection<T>
 where
     T: rpc::Client + Send + Sync + 'static,
 {
+    // node status context (common to multiple connections to the same node)
     context: ArcSwap<Context>,
-    pub node: Arc<Node>,
+    node: Arc<NodeConfig>,
     monitor: Arc<Monitor<T>>,
     params: PathParams,
     client: T,
     shutdown_ctl: DuplexChannel<()>,
+    is_delegate: AtomicBool,
     is_connected: AtomicBool,
     is_online: AtomicBool,
     args: Arc<Args>,
@@ -57,7 +59,7 @@ where
 {
     pub fn try_new(
         monitor: Arc<Monitor<T>>,
-        node: Arc<Node>,
+        node: Arc<NodeConfig>,
         _sender: Sender<PathParams>,
         args: &Arc<Args>,
     ) -> Result<Self> {
@@ -77,6 +79,7 @@ where
             node,
             client,
             shutdown_ctl: DuplexChannel::oneshot(),
+            is_delegate: AtomicBool::new(false),
             is_connected: AtomicBool::new(false),
             is_online: AtomicBool::new(false),
             args: args.clone(),
@@ -90,12 +93,13 @@ where
 
     #[inline]
     pub fn score(&self) -> u64 {
-        self.context.load().clients.load(Ordering::Relaxed) // * self.bias / BIAS_SCALE
+        self.context.load().clients.load(Ordering::Relaxed)
     }
 
     #[inline]
     pub fn is_available(&self) -> bool {
-        self.online()
+        self.is_delegate()
+            && self.online()
             && self
                 .context
                 .load()
@@ -126,25 +130,28 @@ where
 
     #[inline]
     pub fn caps(&self) -> Arc<OnceLock<Caps>> {
-        self.context.load().caps.clone() //get().cloned()
+        self.context.load().caps.clone()
     }
 
+    #[inline]
+    pub fn node(&self) -> &Arc<NodeConfig> {
+        &self.node
+    }
+
+    #[inline]
     pub fn set_context(&self, context: Arc<Context>) {
         self.context.store(context);
     }
 
+    #[inline]
     pub fn context(&self) -> Arc<Context> {
         self.context.load().clone()
     }
 
-    // pub fn set_sibling(&self, sibling: Option<Delegate>) {
-    //     self.has_sibling.store(sibling.is_some(), Ordering::Relaxed);
-    //     *self.sibling.lock().unwrap() = sibling;
-    // }
-
-    // pub fn sibling(&self) -> Option<Delegate> {
-    //     self.sibling.lock().unwrap().clone()
-    // }
+    #[inline]
+    pub fn is_delegate(&self) -> bool {
+        self.is_delegate.load(Ordering::Relaxed)
+    }
 
     pub fn status(&self) -> &'static str {
         if self.connected() {
@@ -159,13 +166,13 @@ where
     }
 
     async fn connect(&self) -> Result<()> {
-        let options = ConnectOptions {
-            block_async_connect: false,
-            strategy: ConnectStrategy::Retry,
-            ..Default::default()
-        };
+        // let options = ConnectOptions {
+        //     block_async_connect: false,
+        //     strategy: ConnectStrategy::Retry,
+        //     ..Default::default()
+        // };
 
-        self.client.connect(options).await?;
+        self.client.connect().await?;
         Ok(())
     }
 
@@ -175,8 +182,8 @@ where
         let shutdown_ctl_receiver = self.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
 
-        let interval = workflow_core::task::interval(Duration::from_secs(1));
-        pin_mut!(interval);
+        let mut interval = workflow_core::task::interval(Duration::from_secs(1));
+        // pin_mut!(interval);
 
         loop {
             select! {
@@ -257,11 +264,23 @@ where
     }
 
     async fn update_state(self: &Arc<Self>) -> Result<()> {
-        // if self.caps.get().is_none() {
         if self.caps().get().is_none() {
             let caps = self.client.get_caps().await?;
 
+            let delegate = Delegate::new(caps.system_id(), self.node.network_node_uid());
             self.caps().set(caps).unwrap();
+
+            let mut delegates = self.monitor.delegates();
+            if let Entry::Vacant(e) = delegates.entry(delegate) {
+                e.insert(self.clone());
+                self.is_delegate.store(true, Ordering::Relaxed);
+            } else {
+                self.is_delegate.store(false, Ordering::Relaxed);
+            };
+        }
+
+        if !self.is_delegate() {
+            return Ok(());
         }
 
         match self.client.get_sync().await {
@@ -315,12 +334,8 @@ where
 #[derive(Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Output<'a> {
-    pub id: &'a str,
+    pub uid: &'a str,
     pub url: &'a str,
-    // #[serde(skip_serializing_if = "Option::is_none")]
-    // pub provider_name: Option<&'a str>,
-    // #[serde(skip_serializing_if = "Option::is_none")]
-    // pub provider_url: Option<&'a str>,
 }
 
 impl<'a, T> From<&'a Arc<Connection<T>>> for Output<'a>
@@ -328,26 +343,9 @@ where
     T: rpc::Client + Send + Sync + 'static,
 {
     fn from(connection: &'a Arc<Connection<T>>) -> Self {
-        let id = connection.node.id_string.as_str();
-        let url = connection.node.address.as_str();
-        // let provider_name = connection
-        //     .node
-        //     .provider
-        //     .as_ref()
-        //     .map(|provider| provider.name.as_str());
-        // let provider_url = connection
-        //     .node
-        //     .provider
-        //     .as_ref()
-        //     .map(|provider| provider.url.as_str());
-
-        // let provider_name = connection.node.provider.as_deref();
-        // let provider_url = connection.node.link.as_deref();
         Self {
-            id,
-            url,
-            // provider_name,
-            // provider_url,
+            uid: connection.node.uid_as_str(),
+            url: connection.node.address(),
         }
     }
 }

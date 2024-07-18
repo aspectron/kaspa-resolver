@@ -4,6 +4,7 @@ use sparkle_rpc_client::prelude::SparkleRpcClient;
 #[derive(Debug)]
 pub struct Client {
     client: SparkleRpcClient,
+    url: String,
 }
 
 #[async_trait]
@@ -15,14 +16,25 @@ impl rpc::Client for Client {
     fn try_new(encoding: WrpcEncoding, url: &str) -> Result<Self> {
         let client = SparkleRpcClient::try_new(url, Some(encoding))?;
 
-        Ok(Self { client })
+        Ok(Self {
+            client,
+            url: url.to_string(),
+        })
     }
 
     fn multiplexer(&self) -> Multiplexer<Ctl> {
         self.client.ctl_multiplexer()
     }
 
-    async fn connect(&self, options: ConnectOptions) -> Result<()> {
+    // async fn connect(&self, options: ConnectOptions) -> Result<()> {
+    async fn connect(&self) -> Result<()> {
+        let options = ConnectOptions {
+            block_async_connect: false,
+            strategy: ConnectStrategy::Retry,
+            url: Some(self.url.clone()),
+            ..Default::default()
+        };
+
         self.client.connect(Some(options)).await?;
         Ok(())
     }

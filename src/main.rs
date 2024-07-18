@@ -1,6 +1,7 @@
 mod args;
 mod config;
 mod connection;
+mod delegate;
 mod error;
 mod group;
 mod imports;
@@ -53,14 +54,15 @@ async fn run() -> Result<()> {
         return Ok(());
     }
 
-    workflow_log::set_log_level(workflow_log::LevelFilter::Info);
+    if args.trace {
+        workflow_log::set_log_level(workflow_log::LevelFilter::Trace);
+    } else {
+        workflow_log::set_log_level(workflow_log::LevelFilter::Info);
+    }
     panic::init_ungraceful_panic_handler();
 
     println!();
-    println!(
-        "Kaspa wRPC Resolver v{} starting...",
-        env!("CARGO_PKG_VERSION")
-    );
+    println!("Kaspa RPC resolver v{}", env!("CARGO_PKG_VERSION"));
 
     tracing_subscriber::fmt::init();
 

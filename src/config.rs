@@ -1,36 +1,26 @@
-// #![allow(dead_code)]
-
-// use kaspa_consensus_core::network;
-
 use crate::imports::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
-    // #[serde(rename = "distribution")]
-    // distributions: HashMap<String, HashMap<NetworkId, Distribution>>,
     #[serde(rename = "transport")]
     transports: TransportDictionary,
-    // transports: HashMap<String, Transport>,
     #[serde(rename = "group")]
     groups: Option<Vec<Group>>,
     #[serde(rename = "node")]
-    nodes: Option<Vec<Node>>,
+    nodes: Option<Vec<NodeConfig>>,
 }
 
 impl Config {
-    pub fn try_parse(toml: &str) -> Result<Vec<Arc<Node>>> {
+    pub fn try_parse(toml: &str) -> Result<Vec<Arc<NodeConfig>>> {
         let config = toml::from_str::<Config>(toml)?;
 
-        let mut nodes: Vec<Arc<Node>> = config
+        let mut nodes: Vec<Arc<NodeConfig>> = config
             .nodes
             .map(|nodes| {
                 nodes
                     .into_iter()
                     .filter_map(|mut node| {
-                        let id = xxh3_64(node.address.as_bytes());
-                        let id_string = format!("{id:x}");
-                        node.id = id;
-                        node.id_string = id_string.chars().take(8).collect();
+                        node.uid = xxh3_64(node.address.as_bytes());
                         node.enable.unwrap_or(true).then_some(node).map(Arc::new)
                     })
                     .collect::<Vec<_>>()
@@ -76,8 +66,13 @@ impl Config {
                                     let fqdn = fqdn.replace('*', &id.to_lowercase());
                                     let address =
                                         transport.make_address(&fqdn, service, network_id);
-                                    let node =
-                                        Node::new(service, *network_id, transport, fqdn, address);
+                                    let node = NodeConfig::new(
+                                        service,
+                                        *network_id,
+                                        transport,
+                                        fqdn,
+                                        address,
+                                    );
                                     nodes.push(node);
                                 } else {
                                     log_error!("Config", "Unknown transport: {}", transport);
@@ -93,51 +88,25 @@ impl Config {
     }
 }
 
+#[allow(dead_code)]
 pub fn config_folder() -> PathBuf {
     dirs::home_dir()
         .expect("Could not find home folder")
         .join(".kaspa-resolver")
 }
 
-pub fn load_config() -> Result<Vec<Arc<Node>>> {
-    let config_folder = config_folder();
-    let toml = fs::read_to_string(config_folder.join("Resolver.toml"))?;
-    Config::try_parse(&toml)
-    // let toml = chacha20poly1305::decrypt_slice(&data, &key)?;
-    // crate::node::try_parse_nodes(toml.as_str()?)
-}
-
-pub fn test_config() -> Result<Vec<Arc<Node>>> {
-    let local = include_str!("../Resolver.toml");
+pub fn load_config() -> Result<Vec<Arc<NodeConfig>>> {
     // let config_folder = config_folder();
     // let toml = fs::read_to_string(config_folder.join("Resolver.toml"))?;
+    let toml = include_str!("../Resolver.toml");
+    Config::try_parse(toml)
+}
+
+pub fn test_config() -> Result<Vec<Arc<NodeConfig>>> {
+    let local = include_str!("../Resolver.toml");
     Config::try_parse(local)
 }
 
 pub async fn update() -> Result<()> {
     Ok(())
-    // let config_folder = config_folder();
-    // let key = load_key()?;
-    // let data = fs::read(config_folder.join("resolver.bin"))?;
-    // let toml = chacha20poly1305::decrypt_slice(&data, &key)?;
-    // crate::node::try_parse_nodes(toml.as_str()?)
 }
-
-// fn transform(list: Vec<String>) -> Vec<Arc<Node>> {
-//     let mut nodes = vec![];
-//     for fqdn in list.into_iter() {
-//         if fqdn.contains('*') {
-//             for n in 0..M_NODES_PER_FQDN {
-//                 nodes.push((NetworkId::from_str("mainnet").unwrap(),fqdn.replace('*', &format!("n{n}"))));
-//             }
-//             for n in 0..T_NODES_PER_FQDN {
-//                 nodes.push((NetworkId::from_str("testnet-10").unwrap(),fqdn.replace('*', &format!("a{n}"))));
-//                 nodes.push((NetworkId::from_str("testnet-11").unwrap(),fqdn.replace('*', &format!("b{n}"))));
-//             }
-//         } else {
-//             panic!("Invalid FQDN: {}", fqdn);
-//         }
-//     }
-
-//     nodes.into_iter().map(Node::fqdn).collect()
-// }
