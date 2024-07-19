@@ -28,7 +28,6 @@ impl rpc::Client for Client {
         self.client.ctl_multiplexer()
     }
 
-    // async fn connect(&self, options: ConnectOptions) -> Result<()> {
     async fn connect(&self) -> Result<()> {
         let options = ConnectOptions {
             block_async_connect: false,
@@ -44,6 +43,7 @@ impl rpc::Client for Client {
     async fn get_caps(&self) -> Result<Caps> {
         let GetSystemInfoResponse {
             system_id,
+            git_hash,
             cpu_physical_cores,
             total_memory,
             fd_limit,
@@ -51,10 +51,13 @@ impl rpc::Client for Client {
         let cpu_physical_cores = cpu_physical_cores as u64;
         let fd_limit = fd_limit as u64;
         let socket_capacity = fd_limit.min(cpu_physical_cores * rpc::SOCKETS_PER_CORE);
-        // let system_id = u128::from_be_bytes(system_id[0..16].try_into()?);
-        let system_id = u64::from_be_bytes(system_id[0..8].try_into()?);
+        let system_id = system_id
+            .and_then(|v| v[0..8].try_into().ok().map(u64::from_be_bytes))
+            .unwrap_or_default();
+        let git_hash = git_hash.as_ref().map(ToHex::to_hex);
         Ok(Caps {
             system_id,
+            git_hash,
             total_memory,
             cpu_physical_cores,
             fd_limit,

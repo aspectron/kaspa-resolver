@@ -166,12 +166,6 @@ where
     }
 
     async fn connect(&self) -> Result<()> {
-        // let options = ConnectOptions {
-        //     block_async_connect: false,
-        //     strategy: ConnectStrategy::Retry,
-        //     ..Default::default()
-        // };
-
         self.client.connect().await?;
         Ok(())
     }
@@ -183,7 +177,6 @@ where
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
 
         let mut interval = workflow_core::task::interval(Duration::from_secs(1));
-        // pin_mut!(interval);
 
         loop {
             select! {

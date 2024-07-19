@@ -49,6 +49,12 @@ pub enum Error {
 
     #[error(transparent)]
     TryFromSlice(#[from] std::array::TryFromSliceError),
+
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+
+    #[error("Could not locate local config")]
+    LocalConfigNotFound,
 }
 
 // impl Error {

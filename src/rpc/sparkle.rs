@@ -26,7 +26,6 @@ impl rpc::Client for Client {
         self.client.ctl_multiplexer()
     }
 
-    // async fn connect(&self, options: ConnectOptions) -> Result<()> {
     async fn connect(&self) -> Result<()> {
         let options = ConnectOptions {
             block_async_connect: false,

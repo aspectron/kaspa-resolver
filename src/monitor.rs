@@ -34,10 +34,9 @@ impl<T> Monitor<T>
 where
     T: rpc::Client + Send + Sync + 'static,
 {
-    pub fn new() -> Self {
+    pub fn new(args: &Arc<Args>) -> Self {
         Self {
-            args: Arc::new(Args::default()),
-            // name,
+            args: args.clone(),
             connections: Default::default(),
             delegates: Default::default(),
             sorts: Default::default(),
@@ -62,7 +61,20 @@ where
     }
 
     /// Process an update to `Server.toml` removing or adding node connections accordingly.
-    pub async fn update_nodes(self: &Arc<Self>, nodes: &[Arc<NodeConfig>]) -> Result<()> {
+    pub async fn update_nodes(
+        self: &Arc<Self>,
+        global_node_list: &mut Vec<Arc<NodeConfig>>,
+    ) -> Result<()> {
+        let mut nodes = Vec::new();
+        global_node_list.retain(|node| {
+            if node.service() == T::service() {
+                nodes.push(node.clone());
+                false
+            } else {
+                true
+            }
+        });
+
         let mut connections = self.connections();
 
         for params in PathParams::iter() {
@@ -127,25 +139,13 @@ where
         Ok(())
     }
 
-    pub async fn start(self: &Arc<Self>, nodes: &mut Vec<Arc<NodeConfig>>) -> Result<()> {
-        let mut list = Vec::new();
-        nodes.retain(|node| {
-            if node.service() == T::service() {
-                list.push(node.clone());
-                false
-            } else {
-                true
-            }
-        });
-
+    pub async fn start(self: &Arc<Self>) -> Result<()> {
         let this = self.clone();
         spawn(async move {
             if let Err(error) = this.task().await {
-                println!("NodeConnection task error: {:?}", error);
+                println!("Monitor task error: {:?}", error);
             }
         });
-
-        self.update_nodes(&list).await?;
 
         Ok(())
     }
@@ -163,20 +163,11 @@ where
         let shutdown_ctl_receiver = self.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
 
-        let mut update = workflow_core::task::interval(Duration::from_secs(60 * 60 * 12));
-        // pin_mut!(update);
-
         let mut interval = workflow_core::task::interval(Duration::from_millis(300));
-        // pin_mut!(interval);
 
         loop {
             select! {
 
-                _ = update.next().fuse() => {
-                    if let Err(err) = crate::config::update().await {
-                        log_error!("Update", "{}", err);
-                    }
-                }
                 _ = interval.next().fuse() => {
                     for (params, sort) in self.sorts.iter() {
                         if sort.load(Ordering::Relaxed) {

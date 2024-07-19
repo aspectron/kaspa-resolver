@@ -3,6 +3,7 @@ mod config;
 mod connection;
 mod delegate;
 mod error;
+mod events;
 mod group;
 mod imports;
 mod log;
@@ -44,34 +45,47 @@ async fn main() {
 async fn run() -> Result<()> {
     let args = Arc::new(Args::parse());
 
-    if args.test {
-        let nodes = test_config()?;
-        if args.verbose {
-            for node in nodes.iter() {
-                println!("{}", node.address);
+    match args.action {
+        Action::Test => {
+            let nodes = test_config()?;
+            if args.verbose {
+                for node in nodes.iter() {
+                    println!("{}", node.address);
+                }
             }
         }
-        return Ok(());
+        Action::Login => {
+            config::get_key()?;
+        }
+        Action::Pack => {
+            config::pack()?;
+        }
+        Action::Unpack => {
+            config::unpack()?;
+        }
+        Action::Update => {
+            config::update_global_config().await?;
+        }
+        Action::Run => {
+            if args.trace {
+                workflow_log::set_log_level(workflow_log::LevelFilter::Trace);
+            } else {
+                workflow_log::set_log_level(workflow_log::LevelFilter::Info);
+            }
+            panic::init_ungraceful_panic_handler();
+
+            println!();
+            println!("Kaspa RPC resolver v{}", env!("CARGO_PKG_VERSION"));
+
+            tracing_subscriber::fmt::init();
+
+            let resolver = Arc::new(Resolver::try_new(&args)?);
+            resolver.init_http_server().await?;
+            resolver.start().await?;
+            resolver.listen().await?;
+            resolver.stop().await?;
+        }
     }
 
-    if args.trace {
-        workflow_log::set_log_level(workflow_log::LevelFilter::Trace);
-    } else {
-        workflow_log::set_log_level(workflow_log::LevelFilter::Info);
-    }
-    panic::init_ungraceful_panic_handler();
-
-    println!();
-    println!("Kaspa RPC resolver v{}", env!("CARGO_PKG_VERSION"));
-
-    tracing_subscriber::fmt::init();
-
-    let nodes = load_config()?;
-
-    let resolver = Arc::new(Resolver::try_new(nodes)?);
-    resolver.init_http_server(&args).await?;
-    resolver.start().await?;
-    resolver.listen().await?;
-    resolver.stop().await?;
     Ok(())
 }

@@ -8,11 +8,10 @@ const SOCKETS_PER_CORE: u64 = 1024;
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Caps {
-    // node id
-    // pub system_id: Vec<u8>,
-    // node id in hex
-    // pub hex_id: String,
+    // node system id
     pub system_id: u64,
+    // git hash
+    pub git_hash: Option<String>,
     // current memory usage in bytes
     pub total_memory: u64,
     // number of cores
@@ -41,7 +40,6 @@ pub trait Client: std::fmt::Debug + Sized + Send + Sync + 'static {
         todo!()
     }
 
-    // async fn connect(&self, _options: ConnectOptions) -> Result<()> {
     async fn connect(&self) -> Result<()> {
         todo!()
     }

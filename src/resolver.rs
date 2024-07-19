@@ -16,19 +16,26 @@ use tower::{buffer::BufferLayer, limit::RateLimitLayer, ServiceBuilder};
 use tower_http::cors::{Any, CorsLayer};
 
 struct Inner {
+    args: Arc<Args>,
     http_server: Mutex<Option<(TcpListener, Router)>>,
-    nodes: Mutex<Vec<Arc<NodeConfig>>>,
+    // nodes: Mutex<Vec<Arc<NodeConfig>>>,
     kaspa: Arc<Monitor<rpc::kaspa::Client>>,
     sparkle: Arc<Monitor<rpc::sparkle::Client>>,
+    shutdown_ctl: DuplexChannel<()>,
+    events: Channel<Events>,
 }
 
 impl Inner {
-    fn new(nodes: Vec<Arc<NodeConfig>>) -> Self {
+    // fn new(nodes: Vec<Arc<NodeConfig>>) -> Self {
+    fn new(args: &Arc<Args>) -> Self {
         Self {
+            args: args.clone(),
             http_server: Default::default(),
-            nodes: Mutex::new(nodes),
-            kaspa: Arc::new(Monitor::new()),
-            sparkle: Arc::new(Monitor::new()),
+            // nodes: Mutex::new(nodes),
+            kaspa: Arc::new(Monitor::new(args)),
+            sparkle: Arc::new(Monitor::new(args)),
+            shutdown_ctl: DuplexChannel::oneshot(),
+            events: Channel::unbounded(),
         }
     }
 }
@@ -39,13 +46,22 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    pub fn try_new(nodes: Vec<Arc<NodeConfig>>) -> Result<Self> {
+    // pub fn try_new(nodes: Vec<Arc<NodeConfig>>) -> Result<Self> {
+    //     Ok(Self {
+    //         inner: Arc::new(Inner::new(nodes)),
+    //     })
+    // }
+    pub fn try_new(args: &Arc<Args>) -> Result<Self> {
         Ok(Self {
-            inner: Arc::new(Inner::new(nodes)),
+            inner: Arc::new(Inner::new(args)),
         })
     }
 
-    pub async fn init_http_server(self: &Arc<Self>, args: &Args) -> Result<()> {
+    pub fn args(&self) -> &Arc<Args> {
+        &self.inner.args
+    }
+
+    pub async fn init_http_server(self: &Arc<Self>) -> Result<()> {
         let router = Router::new();
 
         let this = self.clone();
@@ -62,7 +78,7 @@ impl Resolver {
             // get(|query, path| async move { this.get_elected_sparkle(query, path).await }),
         );
 
-        let router = if args.status {
+        let router = if self.args().status {
             log_warn!("Routes", "Enabling `/status` route");
             let this1 = self.clone();
             let this2 = self.clone();
@@ -85,7 +101,7 @@ impl Resolver {
             router
         };
 
-        let router = if let Some(rate_limit) = args.rate_limit.as_ref() {
+        let router = if let Some(rate_limit) = self.args().rate_limit.as_ref() {
             log_success!(
                 "Limits",
                 "Setting rate limit to: {} requests per {} seconds",
@@ -113,8 +129,12 @@ impl Resolver {
 
         let router = router.layer(CorsLayer::new().allow_origin(Any));
 
-        log_success!("Server", "Listening on http://{}", args.listen.as_str());
-        let listener = tokio::net::TcpListener::bind(args.listen.as_str())
+        log_success!(
+            "Server",
+            "Listening on http://{}",
+            self.args().listen.as_str()
+        );
+        let listener = tokio::net::TcpListener::bind(self.args().listen.as_str())
             .await
             .unwrap();
 
@@ -133,22 +153,132 @@ impl Resolver {
         Ok(())
     }
 
-    pub fn nodes(&self) -> Vec<Arc<NodeConfig>> {
-        self.inner.nodes.lock().unwrap().clone()
-    }
+    // pub fn nodes(&self) -> Vec<Arc<NodeConfig>> {
+    //     self.inner.nodes.lock().unwrap().clone()
+    // }
 
     pub async fn start(self: &Arc<Self>) -> Result<()> {
-        let mut nodes = self.nodes();
-        self.inner.kaspa.start(&mut nodes).await?;
-        self.inner.sparkle.start(&mut nodes).await?;
+        // let mut nodes = self.nodes();
+        // let mut nodes = load_config()?;
+
+        self.inner.kaspa.start().await?;
+        self.inner.sparkle.start().await?;
+        // let mut nodes = load_config()?;
+
+        // self.inner.kaspa.start(&mut nodes).await?;
+        // self.inner.sparkle.start(&mut nodes).await?;
+
+        let this = self.clone();
+        spawn(async move {
+            if let Err(error) = this.task().await {
+                println!("Resolver task error: {:?}", error);
+            }
+        });
+
+        self.inner.events.send(Events::Start).await?;
+
         Ok(())
     }
 
     pub async fn stop(self: &Arc<Self>) -> Result<()> {
         self.inner.sparkle.stop().await?;
         self.inner.kaspa.stop().await?;
+
+        self.inner
+            .shutdown_ctl
+            .signal(())
+            .await
+            .expect("Monitor shutdown signal error");
+
         Ok(())
     }
+
+    async fn task(self: Arc<Self>) -> Result<()> {
+        let events = self.inner.events.receiver.clone();
+        let shutdown_ctl_receiver = self.inner.shutdown_ctl.request.receiver.clone();
+        let shutdown_ctl_sender = self.inner.shutdown_ctl.response.sender.clone();
+
+        let mut update = workflow_core::task::interval(Duration::from_secs(60 * 60 * 12));
+
+        loop {
+            select! {
+
+                msg = events.recv().fuse() => {
+                    match msg {
+                        Ok(event) => {
+                            match event {
+                                Events::Start => {
+                                    if let Err(err) = self.update(true).await {
+                                        log_error!("Config", "{err}");
+                                    }
+                                },
+                                Events::Update => {
+                                    if let Err(err) = self.update(false).await {
+                                        log_error!("Config", "{err}");
+                                    }
+                                },
+                            }
+                        }
+                        Err(err) => {
+                            println!("Monitor: error while receiving events message: {err}");
+                            break;
+                        }
+
+                    }
+                }
+
+                _ = update.next().fuse() => {
+                    self.inner.events.send(Events::Update).await?;
+                }
+
+                _ = shutdown_ctl_receiver.recv().fuse() => {
+                    break;
+                },
+
+            }
+        }
+
+        shutdown_ctl_sender.send(()).await.unwrap();
+
+        Ok(())
+    }
+
+    async fn update_nodes(
+        self: &Arc<Self>,
+        mut global_node_list: Vec<Arc<NodeConfig>>,
+    ) -> Result<()> {
+        self.inner.kaspa.update_nodes(&mut global_node_list).await?;
+        self.inner
+            .sparkle
+            .update_nodes(&mut global_node_list)
+            .await?;
+
+        for node in global_node_list.iter() {
+            log_error!("Update", "Dangling node record: {}", node);
+        }
+        Ok(())
+    }
+
+    async fn update(self: &Arc<Self>, fallback_to_local: bool) -> Result<()> {
+        match update_global_config().await {
+            Ok(global_node_list) => {
+                self.update_nodes(global_node_list).await?;
+                Ok(())
+            }
+            Err(_) if fallback_to_local => {
+                let node_list = load_config()?;
+                self.update_nodes(node_list).await?;
+                Ok(())
+            }
+            Err(err) => Err(err),
+        }
+    }
+
+    // async fn update(self: &Arc<Self>) -> Result<()> {
+    //     let global_node_list = update_global_config().await?;
+    //     self.update_nodes(global_node_list).await?;
+    //     Ok(())
+    // }
 
     // respond with a JSON object containing the status of all nodes
     async fn get_status_all_nodes(&self) -> impl IntoResponse {
