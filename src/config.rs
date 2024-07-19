@@ -91,7 +91,15 @@ impl Config {
     }
 }
 
-#[allow(dead_code)]
+pub fn init() -> Result<()> {
+    let global_config_folder = global_config_folder();
+    if !global_config_folder.exists() {
+        fs::create_dir_all(&global_config_folder)?;
+    }
+
+    Ok(())
+}
+
 pub fn global_config_folder() -> PathBuf {
     dirs::home_dir()
         .expect("Could not find home folder")
@@ -129,7 +137,7 @@ fn local_config_file() -> String {
 }
 
 fn load_key() -> Result<Secret> {
-    Ok(Secret::from(fs::read(global_config_folder().join("key"))?))
+    Ok(Secret::from(fs::read(global_config_folder().join(key_file()))?))
 }
 
 pub fn locate_local_config() -> Option<PathBuf> {
@@ -236,8 +244,11 @@ pub fn get_key() -> Result<Secret> {
 pub fn pack() -> Result<()> {
     let key = get_key()?;
     let local_config_folder = local_config_folder().ok_or(Error::LocalConfigNotFound)?;
+    println!("local_config_folder: {}", local_config_folder.display());
     let local_config_file = local_config_folder.join(local_config_file());
+    println!("local_config_file: {}", local_config_file.display());
     let local_data_file = local_config_folder.join(global_config_file());
+    println!("local_data_file: {}", local_data_file.display());
     let toml = fs::read_to_string(local_config_file)?;
     Config::try_parse(toml.as_str())?;
     let data = chacha20poly1305::encrypt_slice(toml.as_bytes(), &key)?;

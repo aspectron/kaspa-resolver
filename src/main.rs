@@ -45,6 +45,8 @@ async fn main() {
 async fn run() -> Result<()> {
     let args = Arc::new(Args::parse());
 
+    config::init()?;
+
     match args.action {
         Action::Test => {
             let nodes = test_config()?;
