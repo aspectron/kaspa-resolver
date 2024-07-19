@@ -1874,7 +1874,7 @@ dependencies = [
 [[package]]
 name = "kaspa-addresses"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "borsh",
  "js-sys",
@@ -1889,7 +1889,7 @@ dependencies = [
 [[package]]
 name = "kaspa-bip32"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "borsh",
  "bs58",
@@ -1916,7 +1916,7 @@ dependencies = [
 [[package]]
 name = "kaspa-consensus-client"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "ahash",
  "cfg-if 1.0.0",
@@ -1945,7 +1945,7 @@ dependencies = [
 [[package]]
 name = "kaspa-consensus-core"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-trait",
  "borsh",
@@ -1980,7 +1980,7 @@ dependencies = [
 [[package]]
 name = "kaspa-consensus-notify"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-channel 2.3.1",
  "cfg-if 1.0.0",
@@ -2000,7 +2000,7 @@ dependencies = [
 [[package]]
 name = "kaspa-consensus-wasm"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "cfg-if 1.0.0",
  "faster-hex 0.6.1",
@@ -2025,7 +2025,7 @@ dependencies = [
 [[package]]
 name = "kaspa-core"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "cfg-if 1.0.0",
  "ctrlc",
@@ -2044,7 +2044,7 @@ dependencies = [
 [[package]]
 name = "kaspa-hashes"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "blake2b_simd",
  "borsh",
@@ -2063,7 +2063,7 @@ dependencies = [
 [[package]]
 name = "kaspa-index-core"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-channel 2.3.1",
  "async-trait",
@@ -2083,7 +2083,7 @@ dependencies = [
 [[package]]
 name = "kaspa-math"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "borsh",
  "faster-hex 0.6.1",
@@ -2103,7 +2103,7 @@ dependencies = [
 [[package]]
 name = "kaspa-merkle"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "kaspa-hashes",
 ]
@@ -2111,7 +2111,7 @@ dependencies = [
 [[package]]
 name = "kaspa-metrics-core"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-trait",
  "borsh",
@@ -2128,7 +2128,7 @@ dependencies = [
 [[package]]
 name = "kaspa-mining-errors"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "kaspa-consensus-core",
  "thiserror",
@@ -2137,7 +2137,7 @@ dependencies = [
 [[package]]
 name = "kaspa-muhash"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "kaspa-hashes",
  "kaspa-math",
@@ -2148,7 +2148,7 @@ dependencies = [
 [[package]]
 name = "kaspa-notify"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-channel 2.3.1",
  "async-trait",
@@ -2180,7 +2180,7 @@ dependencies = [
 [[package]]
 name = "kaspa-pow"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "js-sys",
  "kaspa-consensus-client",
@@ -2215,6 +2215,7 @@ dependencies = [
  "mime",
  "rand",
  "regex",
+ "reqwest",
  "serde",
  "serde-hex",
  "serde_json",
@@ -2238,7 +2239,7 @@ dependencies = [
 [[package]]
 name = "kaspa-rpc-core"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-channel 2.3.1",
  "async-trait",
@@ -2280,7 +2281,7 @@ dependencies = [
 [[package]]
 name = "kaspa-rpc-macros"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro-error",
@@ -2293,11 +2294,12 @@ dependencies = [
 [[package]]
 name = "kaspa-txscript"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "blake2b_simd",
  "borsh",
  "cfg-if 1.0.0",
+ "hexplay",
  "indexmap 2.2.6",
  "itertools",
  "kaspa-addresses",
@@ -2323,7 +2325,7 @@ dependencies = [
 [[package]]
 name = "kaspa-txscript-errors"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "secp256k1",
  "thiserror",
@@ -2332,7 +2334,7 @@ dependencies = [
 [[package]]
 name = "kaspa-utils"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-channel 2.3.1",
  "borsh",
@@ -2359,7 +2361,7 @@ dependencies = [
 [[package]]
 name = "kaspa-wallet-core"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "aes",
  "ahash",
@@ -2438,7 +2440,7 @@ dependencies = [
 [[package]]
 name = "kaspa-wallet-keys"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-trait",
  "borsh",
@@ -2471,7 +2473,7 @@ dependencies = [
 [[package]]
 name = "kaspa-wallet-macros"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "convert_case 0.5.0",
  "proc-macro-error",
@@ -2485,7 +2487,7 @@ dependencies = [
 [[package]]
 name = "kaspa-wasm"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "cfg-if 1.0.0",
  "js-sys",
@@ -2513,17 +2515,19 @@ dependencies = [
 [[package]]
 name = "kaspa-wasm-core"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "faster-hex 0.6.1",
+ "hexplay",
  "js-sys",
  "wasm-bindgen",
+ "workflow-wasm",
 ]
 
 [[package]]
 name = "kaspa-wrpc-client"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "async-std",
  "async-trait",
@@ -2559,7 +2563,7 @@ dependencies = [
 [[package]]
 name = "kaspa-wrpc-wasm"
 version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#2c521859dd064028954113c9887d227fab68fffd"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#df206beb3dab9a2fc1aa362be6133d4c9e95ba4a"
 dependencies = [
  "ahash",
  "async-std",
@@ -3988,7 +3992,7 @@ checksum = "5dd62203d74a728ae353b4d716fc2a80e8da881dfdf8bbc0c012d877a58c4030"
 [[package]]
 name = "sparkle-core"
 version = "0.0.1"
-source = "git+https://github.com/aspectron/sparkle.git?branch=omega#b977b21e82c5381341b0c3430e3dce392ef8a31a"
+source = "git+https://github.com/aspectron/sparkle.git?branch=omega#48814f0a385b96e7d657c061fdf47199303ed0b8"
 dependencies = [
  "ahash",
  "async-trait",
@@ -4039,7 +4043,7 @@ dependencies = [
 [[package]]
 name = "sparkle-macros"
 version = "0.0.1"
-source = "git+https://github.com/aspectron/sparkle.git?branch=omega#b977b21e82c5381341b0c3430e3dce392ef8a31a"
+source = "git+https://github.com/aspectron/sparkle.git?branch=omega#48814f0a385b96e7d657c061fdf47199303ed0b8"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro-error",
@@ -4052,7 +4056,7 @@ dependencies = [
 [[package]]
 name = "sparkle-rpc-client"
 version = "0.0.1"
-source = "git+https://github.com/aspectron/sparkle.git?branch=omega#b977b21e82c5381341b0c3430e3dce392ef8a31a"
+source = "git+https://github.com/aspectron/sparkle.git?branch=omega#48814f0a385b96e7d657c061fdf47199303ed0b8"
 dependencies = [
  "async-std",
  "async-trait",
@@ -4077,7 +4081,7 @@ dependencies = [
 [[package]]
 name = "sparkle-rpc-core"
 version = "0.0.1"
-source = "git+https://github.com/aspectron/sparkle.git?branch=omega#b977b21e82c5381341b0c3430e3dce392ef8a31a"
+source = "git+https://github.com/aspectron/sparkle.git?branch=omega#48814f0a385b96e7d657c061fdf47199303ed0b8"
 dependencies = [
  "async-std",
  "async-trait",
@@ -4229,18 +4233,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.62"
+version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2675633b1499176c2dff06b0856a27976a8f9d436737b4cf4f312d4d91d8bbb"
+checksum = "c0342370b38b6a11b6cc11d6a805569958d54cfa061a29969c3b5ce2ea405724"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.62"
+version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d20468752b09f49e909e55a5d338caa8bedf615594e9d80bc4c565d30faf798c"
+checksum = "a4558b58466b9ad7ca0f102865eccc95938dca1a74a856f2b57b6629050da261"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4317,9 +4321,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.38.0"
+version = "1.38.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba4f4a02a7a80d6f274636f0aa95c7e383b912d41fe721a31f29e29698585a4a"
+checksum = "eb2caba9f80616f438e09748d5acda951967e1ea58508ef53d9c6402485a46df"
 dependencies = [
  "backtrace",
  "bytes",
@@ -4395,14 +4399,14 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f49eb2ab21d2f26bd6db7bf383edc527a7ebaee412d17af4d40fdccd442f335"
+checksum = "ac2caab0bf757388c6c0ae23b3293fdb463fee59434529014f85e3263b995c28"
 dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit 0.22.15",
+ "toml_edit 0.22.16",
 ]
 
 [[package]]
@@ -4427,9 +4431,9 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.22.15"
+version = "0.22.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d59a3a72298453f564e2b111fa896f8d07fabb36f51f06d7e875fc5e0b5a3ef1"
+checksum = "278f3d518e152219c994ce877758516bca5e118eaed6996192a774fb9fbf0788"
 dependencies = [
  "indexmap 2.2.6",
  "serde",
