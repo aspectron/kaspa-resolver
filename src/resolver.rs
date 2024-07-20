@@ -190,7 +190,7 @@ impl Resolver {
         let shutdown_ctl_receiver = self.inner.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.inner.shutdown_ctl.response.sender.clone();
 
-        let mut update = workflow_core::task::interval(Duration::from_secs(60 * 60 * 12));
+        let mut update = workflow_core::task::interval(Updates::duration());
 
         loop {
             select! {
@@ -253,10 +253,11 @@ impl Resolver {
 
     async fn update(self: &Arc<Self>, fallback_to_local: bool) -> Result<()> {
         match update_global_config().await {
-            Ok(global_node_list) => {
+            Ok(Some(global_node_list)) => {
                 self.update_nodes(global_node_list).await?;
                 Ok(())
             }
+            Ok(None) => Ok(()),
             Err(_) if fallback_to_local => {
                 let node_list = load_config()?;
                 self.update_nodes(node_list).await?;

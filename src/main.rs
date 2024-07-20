@@ -28,8 +28,6 @@ use resolver::Resolver;
 use result::Result;
 use std::sync::Arc;
 
-const FD_LIMIT: u64 = 8192;
-
 #[tokio::main]
 async fn main() {
     if let Err(error) = run().await {
@@ -60,19 +58,27 @@ async fn run() -> Result<()> {
             }
         }
         Action::Login => {
+            println!();
             config::generate_key()?;
+            println!();
         }
         Action::Pack => {
+            println!();
             config::pack()?;
+            println!();
         }
         Action::Unpack => {
+            println!();
             config::unpack()?;
+            println!();
         }
         Action::Update => {
+            println!();
             config::update_global_config().await?;
+            println!();
         }
         Action::Run => {
-            if let Err(err) = try_set_fd_limit(FD_LIMIT) {
+            if let Err(err) = try_set_fd_limit(Limits::fd()) {
                 log_error!("FD Limit", "{err}");
             }
 

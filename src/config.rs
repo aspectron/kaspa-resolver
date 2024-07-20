@@ -92,6 +92,8 @@ impl Config {
 }
 
 pub fn init() -> Result<()> {
+    Settings::load();
+
     let global_config_folder = global_config_folder();
     if !global_config_folder.exists() {
         fs::create_dir_all(&global_config_folder)?;
@@ -189,46 +191,65 @@ pub fn load_default_config() -> Result<Vec<Arc<NodeConfig>>> {
     Config::try_parse(toml.as_str())
 }
 
-pub async fn update_global_config() -> Result<Vec<Arc<NodeConfig>>> {
-    let data = reqwest::get(format!(
-        "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/config/{}",
-        global_config_file()
-    ))
-    .await?
-    .bytes()
-    .await?
-    .to_vec();
-    let key = load_key()?;
-    let toml = chacha20poly1305::decrypt_slice(&data, &key)?;
-    let config = Config::try_parse(toml.as_str()?)?;
-    fs::write(global_config_folder().join(global_config_file()), data)?;
-    Ok(config)
+pub async fn update_global_config() -> Result<Option<Vec<Arc<NodeConfig>>>> {
+    static HASH: Mutex<Option<Vec<u8>>> = Mutex::new(None);
+
+    let data = reqwest::get(format!("{}{}", Updates::url(), global_config_file()))
+        .await?
+        .bytes()
+        .await?
+        .to_vec();
+
+    let hash = sha256(data.as_slice());
+    let mut previous = HASH.lock().unwrap();
+    if previous.as_deref() == Some(hash.as_bytes()) {
+        Ok(None)
+    } else {
+        *previous = Some(hash.as_bytes().to_vec());
+        let key = load_key()?;
+        let toml = chacha20poly1305::decrypt_slice(&data, &key)?;
+        let config = Config::try_parse(toml.as_str()?)?;
+        fs::write(global_config_folder().join(global_config_file()), data)?;
+        Ok(Some(config))
+    }
 }
 
 pub fn generate_key() -> Result<()> {
-    if global_config_folder().join(key_file()).exists()
-        && !cliclack::confirm("Key already exists. Overwrite?").interact()?
-    {
-        return Ok(());
+    let key_path = global_config_folder().join(key_file());
+    if key_path.exists() {
+        if let Ok(key) = fs::read(&key_path) {
+            if key.len() != 32 {
+                log::error("Detected a key file with invalid length... overwriting...")?;
+            } else {
+                let prefix = u16::from_be_bytes(key.as_slice()[0..2].try_into().unwrap());
+                if !cliclack::confirm(format!("Found existing key `{prefix:04x}`. Overwrite?"))
+                    .interact()?
+                {
+                    return Ok(());
+                }
+            }
+        } else if !cliclack::confirm("Key already exists. Overwrite?").interact()? {
+            return Ok(());
+        }
     }
 
     match cliclack::password("Enter password:").interact() {
-        Ok(password1) => {
-            match cliclack::password("Enter password:").interact() {
-                Ok(password2) => {
-                    if password1 != password2 {
-                        return Err(Error::PasswordsDoNotMatch);
-                    }
-                    let key = argon2_sha256(password1.as_bytes(), 32)?;
-                    fs::write(global_config_folder().join(key_file()), key.as_bytes())?;
+        Ok(password1) => match cliclack::password("Enter password:").interact() {
+            Ok(password2) => {
+                if password1 != password2 {
+                    return Err(Error::PasswordsDoNotMatch);
+                }
+                let key = argon2_sha256(password1.as_bytes(), 32)?;
+                let prefix = u16::from_be_bytes(key.as_bytes()[0..2].try_into().unwrap());
+                fs::write(key_path, key.as_bytes())?;
 
-                    cliclack::outro("Key generated successfully")?;
-                    println!();
-                }
-                Err(_) => {
-                    log::error("Failed to read password")?;
-                }
-            }        }
+                cliclack::outro(format!("Key `{prefix:04x}` generated successfully"))?;
+                println!();
+            }
+            Err(_) => {
+                log::error("Failed to read password")?;
+            }
+        },
         Err(_) => {
             log::error("Failed to read password")?;
         }
@@ -249,20 +270,29 @@ pub fn get_key() -> Result<Secret> {
     Ok(key)
 }
 
+fn prefix(key: &Secret) -> String {
+    let prefix = u16::from_be_bytes(key.as_bytes()[0..2].try_into().unwrap());
+    format!("{prefix:04x}")
+}
+
 pub fn pack() -> Result<()> {
     let key = get_key()?;
+    log::info(format!("Packing key prefix `{}`", prefix(&key)))?;
     let local_config_folder = local_config_folder().ok_or(Error::LocalConfigNotFound)?;
     let local_config_file = local_config_folder.join(local_config_file());
     let local_data_file = local_config_folder.join(global_config_file());
     let toml = fs::read_to_string(local_config_file)?;
     Config::try_parse(toml.as_str())?;
     let data = chacha20poly1305::encrypt_slice(toml.as_bytes(), &key)?;
-    fs::write(local_data_file, data)?;
+    fs::write(local_data_file, &data)?;
+    log::success(format!("Package size {}", data.len()))?;
+    outro("Have a great day!")?;
     Ok(())
 }
 
 pub fn unpack() -> Result<()> {
     let key = get_key()?;
+    log::info(format!("Unpacking key prefix `{}`", prefix(&key)))?;
     let local_config_folder = local_config_folder().ok_or(Error::LocalConfigNotFound)?;
     let local_data_file = local_config_folder.join(global_config_file());
     let local_config_file = if local_config_folder.join(local_config_file()).exists() {
@@ -278,6 +308,59 @@ pub fn unpack() -> Result<()> {
     let data = fs::read(local_data_file)?;
     let toml = chacha20poly1305::decrypt_slice(&data, &key)?;
     Config::try_parse(toml.as_str()?)?;
-    fs::write(local_config_file, toml)?;
+    fs::write(&local_config_file, toml)?;
+    log::success(format!(
+        "Unpacked TOML at: `{}`",
+        local_config_file.display()
+    ))?;
+    outro("Have a great day!")?;
     Ok(())
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Settings {
+    updates: Updates,
+    limits: Limits,
+}
+
+impl Settings {
+    pub fn load() {
+        let _ = Settings::get();
+    }
+
+    pub fn get() -> &'static Self {
+        static SETTINGS: OnceLock<Settings> = OnceLock::new();
+        SETTINGS.get_or_init(|| {
+            let toml = include_str!("../Resolver.toml");
+            toml::from_str::<Settings>(toml).unwrap()
+        })
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Updates {
+    pub url: String,
+    pub duration: f64,
+}
+
+impl Updates {
+    pub fn url() -> &'static str {
+        Settings::get().updates.url.as_str()
+    }
+
+    pub fn duration() -> Duration {
+        let seconds = Settings::get().updates.duration * 60.0 * 60.0;
+        Duration::from_secs_f64(seconds)
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Limits {
+    pub fd: u64,
+}
+
+impl Limits {
+    pub fn fd() -> u64 {
+        Settings::get().limits.fd
+    }
 }

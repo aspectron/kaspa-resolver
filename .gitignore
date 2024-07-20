@@ -7,6 +7,5 @@ analyzer-target
 release
 Servers.toml
 /config
-/*.toml
 /data/*.toml
 

@@ -1,0 +1,7 @@
+[limits]
+fd = 8192
+
+[updates]
+url = "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/config/"
+duration = 12.0 # hours
+
