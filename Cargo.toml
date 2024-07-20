@@ -50,6 +50,7 @@ async-trait = "0.1.51"
 axum = "0.7.4"
 borsh = "1.5.1"
 cfg-if = "1.0.0"
+chrono = "0.4.38"
 clap = { version = "4.4.7", features = ["derive", "string", "cargo"] }
 cliclack = "0.3.2"
 console = "0.15.8"
@@ -70,7 +71,6 @@ tower = { version = "0.4.13", features = ["buffer","limit"] }
 tower-http = { version = "0.5.1", features = ["cors"] }
 tracing-subscriber = "0.3.18"
 xxhash-rust = { version = "0.8.7", features = ["xxh3"] }
-chrono = "0.4.38"
 
 # argon2 = "0.5.2"
 # chacha20poly1305 = "0.10.1"

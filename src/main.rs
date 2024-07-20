@@ -28,6 +28,8 @@ use resolver::Resolver;
 use result::Result;
 use std::sync::Arc;
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[tokio::main]
 async fn main() {
     if let Err(error) = run().await {

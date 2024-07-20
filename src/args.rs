@@ -1,8 +1,6 @@
 pub use clap::Parser;
 use std::str::FromStr;
 
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
 #[derive(Debug)]
 pub enum Action {
     Login,
@@ -38,7 +36,7 @@ impl Args {
 
         let cmd = Command::new("kaspa-resolver")
             .about(format!(
-                "resolver v{VERSION}"
+                "resolver v{}", crate::VERSION
             ))
             .arg(arg!(--version "Display software version"))
             .arg(arg!(--verbose "Enable verbose logging"))
@@ -90,7 +88,7 @@ impl Args {
             .unwrap_or("127.0.0.1:8989".to_string());
 
         let action = if matches.get_one::<bool>("version").cloned().unwrap_or(false) {
-            println!("v{VERSION}");
+            println!("v{}", crate::VERSION);
             std::process::exit(0);
         } else if let Some(_matches) = matches.subcommand_matches("test") {
             Action::Test
