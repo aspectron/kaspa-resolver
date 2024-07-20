@@ -55,6 +55,9 @@ pub enum Error {
 
     #[error("Could not locate local config")]
     LocalConfigNotFound,
+
+    #[error("Passwords do not match")]
+    PasswordsDoNotMatch,
 }
 
 // impl Error {

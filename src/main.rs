@@ -60,7 +60,7 @@ async fn run() -> Result<()> {
             }
         }
         Action::Login => {
-            config::get_key()?;
+            config::generate_key()?;
         }
         Action::Pack => {
             config::pack()?;

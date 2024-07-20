@@ -213,12 +213,24 @@ pub fn generate_key() -> Result<()> {
     }
 
     match cliclack::password("Enter password:").interact() {
-        Ok(password) => {
-            let key = argon2_sha256(password.as_bytes(), 32)?;
-            fs::write(global_config_folder().join(key_file()), key.as_bytes())?;
-        }
+        Ok(password1) => {
+            match cliclack::password("Enter password:").interact() {
+                Ok(password2) => {
+                    if password1 != password2 {
+                        return Err(Error::PasswordsDoNotMatch);
+                    }
+                    let key = argon2_sha256(password1.as_bytes(), 32)?;
+                    fs::write(global_config_folder().join(key_file()), key.as_bytes())?;
+
+                    cliclack::outro("Key generated successfully")?;
+                    println!();
+                }
+                Err(_) => {
+                    log::error("Failed to read password")?;
+                }
+            }        }
         Err(_) => {
-            log_error!("Config", "Failed to read password");
+            log::error("Failed to read password")?;
         }
     }
 
@@ -240,11 +252,8 @@ pub fn get_key() -> Result<Secret> {
 pub fn pack() -> Result<()> {
     let key = get_key()?;
     let local_config_folder = local_config_folder().ok_or(Error::LocalConfigNotFound)?;
-    println!("local_config_folder: {}", local_config_folder.display());
     let local_config_file = local_config_folder.join(local_config_file());
-    println!("local_config_file: {}", local_config_file.display());
     let local_data_file = local_config_folder.join(global_config_file());
-    println!("local_data_file: {}", local_data_file.display());
     let toml = fs::read_to_string(local_config_file)?;
     Config::try_parse(toml.as_str())?;
     let data = chacha20poly1305::encrypt_slice(toml.as_bytes(), &key)?;
