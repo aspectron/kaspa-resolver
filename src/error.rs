@@ -1,10 +1,13 @@
+#![allow(dead_code)]
+
 use thiserror::Error;
 use toml::de::Error as TomlError;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    // #[error("{0}")]
-    // Custom(String),
+    #[error("{0}")]
+    Custom(String),
+
     #[error("RPC error: {0}")]
     Rpc(#[from] kaspa_wrpc_client::error::Error),
 
@@ -60,11 +63,11 @@ pub enum Error {
     PasswordsDoNotMatch,
 }
 
-// impl Error {
-//     pub fn custom<T: std::fmt::Display>(msg: T) -> Self {
-//         Error::Custom(msg.to_string())
-//     }
-// }
+impl Error {
+    pub fn custom<T: std::fmt::Display>(msg: T) -> Self {
+        Error::Custom(msg.to_string())
+    }
+}
 
 impl Error {
     pub fn config<T: std::fmt::Display>(msg: T) -> Self {

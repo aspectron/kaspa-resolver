@@ -2,6 +2,6 @@
 fd = 8192
 
 [updates]
-url = "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/config/"
+url = "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/data/"
 duration = 12.0 # hours
 

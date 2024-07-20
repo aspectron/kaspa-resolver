@@ -194,11 +194,17 @@ pub fn load_default_config() -> Result<Vec<Arc<NodeConfig>>> {
 pub async fn update_global_config() -> Result<Option<Vec<Arc<NodeConfig>>>> {
     static HASH: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 
-    let data = reqwest::get(format!("{}{}", Updates::url(), global_config_file()))
+    let url = format!("{}{}", Updates::url(), global_config_file());
+    let data = reqwest::get(&url)
         .await?
         .bytes()
         .await?
         .to_vec();
+
+    if data.len() < 24 {
+        println!("Error fetching: {url}");
+        return Err(Error::custom(format!("Update: invalid data length: {}", data.len())));
+    }
 
     let hash = sha256(data.as_slice());
     let mut previous = HASH.lock().unwrap();
