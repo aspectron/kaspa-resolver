@@ -137,7 +137,9 @@ fn local_config_file() -> String {
 }
 
 fn load_key() -> Result<Secret> {
-    Ok(Secret::from(fs::read(global_config_folder().join(key_file()))?))
+    Ok(Secret::from(fs::read(
+        global_config_folder().join(key_file()),
+    )?))
 }
 
 pub fn locate_local_config() -> Option<PathBuf> {
@@ -153,12 +155,6 @@ pub fn locate_local_config() -> Option<PathBuf> {
             config_file.exists().then_some(config_file)
         })
     })
-
-    // .or_else(|| {
-    //     let config_folder = config_folder();
-    //     let config_file = config_folder.join(&local_config_file);
-    //     config_file.exists().then_some(config_file)
-    // })
 }
 
 pub fn test_config() -> Result<Vec<Arc<NodeConfig>>> {

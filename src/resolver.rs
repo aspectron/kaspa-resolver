@@ -18,7 +18,6 @@ use tower_http::cors::{Any, CorsLayer};
 struct Inner {
     args: Arc<Args>,
     http_server: Mutex<Option<(TcpListener, Router)>>,
-    // nodes: Mutex<Vec<Arc<NodeConfig>>>,
     kaspa: Arc<Monitor<rpc::kaspa::Client>>,
     sparkle: Arc<Monitor<rpc::sparkle::Client>>,
     shutdown_ctl: DuplexChannel<()>,
@@ -26,12 +25,10 @@ struct Inner {
 }
 
 impl Inner {
-    // fn new(nodes: Vec<Arc<NodeConfig>>) -> Self {
     fn new(args: &Arc<Args>) -> Self {
         Self {
             args: args.clone(),
             http_server: Default::default(),
-            // nodes: Mutex::new(nodes),
             kaspa: Arc::new(Monitor::new(args)),
             sparkle: Arc::new(Monitor::new(args)),
             shutdown_ctl: DuplexChannel::oneshot(),
@@ -46,11 +43,6 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    // pub fn try_new(nodes: Vec<Arc<NodeConfig>>) -> Result<Self> {
-    //     Ok(Self {
-    //         inner: Arc::new(Inner::new(nodes)),
-    //     })
-    // }
     pub fn try_new(args: &Arc<Args>) -> Result<Self> {
         Ok(Self {
             inner: Arc::new(Inner::new(args)),
@@ -342,10 +334,13 @@ impl Resolver {
 fn with_json_string(json: String) -> Response<Body> {
     (
         StatusCode::OK,
-        [(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
-        )],
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
+            ),
+            (header::CONNECTION, HeaderValue::from_static("close")),
+        ],
         json,
     )
         .into_response()
@@ -358,10 +353,13 @@ where
 {
     (
         StatusCode::OK,
-        [(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
-        )],
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
+            ),
+            (header::CONNECTION, HeaderValue::from_static("close")),
+        ],
         serde_json::to_string(&data).unwrap(),
     )
         .into_response()
@@ -372,7 +370,10 @@ where
 fn with_mime(body: impl Into<String>, mime: &'static str) -> Response<Body> {
     (
         StatusCode::OK,
-        [(header::CONTENT_TYPE, HeaderValue::from_static(mime))],
+        [
+            (header::CONTENT_TYPE, HeaderValue::from_static(mime)),
+            (header::CONNECTION, HeaderValue::from_static("close")),
+        ],
         body.into(),
     )
         .into_response()
@@ -382,10 +383,13 @@ fn with_mime(body: impl Into<String>, mime: &'static str) -> Response<Body> {
 fn not_found() -> Response<Body> {
     (
         StatusCode::NOT_FOUND,
-        [(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static(mime::TEXT_PLAIN_UTF_8.as_ref()),
-        )],
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static(mime::TEXT_PLAIN_UTF_8.as_ref()),
+            ),
+            (header::CONNECTION, HeaderValue::from_static("close")),
+        ],
         "NOT FOUND",
     )
         .into_response()

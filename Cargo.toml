@@ -8,6 +8,10 @@ edition = "2021"
 # license.workspace = true
 # repository.workspace = true
 
+[[bin]]
+name = "resolver"
+path = "src/main.rs"
+
 [dependencies]
 
 # workflow-core = { path = "../workflow-rs/core" }

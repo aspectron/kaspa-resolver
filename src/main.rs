@@ -23,9 +23,12 @@ mod utils;
 use crate::config::*;
 use args::*;
 use error::Error;
+use kaspa_utils::fd_budget::try_set_fd_limit;
 use resolver::Resolver;
 use result::Result;
 use std::sync::Arc;
+
+const FD_LIMIT: u64 = 8192;
 
 #[tokio::main]
 async fn main() {
@@ -69,6 +72,10 @@ async fn run() -> Result<()> {
             config::update_global_config().await?;
         }
         Action::Run => {
+            if let Err(err) = try_set_fd_limit(FD_LIMIT) {
+                log_error!("FD Limit", "{err}");
+            }
+
             if args.trace {
                 workflow_log::set_log_level(workflow_log::LevelFilter::Trace);
             } else {
