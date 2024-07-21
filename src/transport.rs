@@ -74,6 +74,7 @@ impl Display for EncodingKind {
 }
 
 impl EncodingKind {
+
     pub fn wrpc_encoding(&self) -> Option<WrpcEncoding> {
         match self {
             EncodingKind::Borsh => Some(WrpcEncoding::Borsh),
@@ -105,6 +106,15 @@ impl Display for TransportKind {
 }
 
 impl TransportKind {
+
+    // pub fn state_aggregator(&self) -> bool {
+    //     match self {
+    //         TransportKind::WrpcBorsh => true,
+    //         TransportKind::WrpcJson => false,
+    //         TransportKind::Grpc => false,
+    //     }
+    // }
+
     pub fn protocol(&self) -> ProtocolKind {
         match self {
             TransportKind::WrpcBorsh => ProtocolKind::Wrpc,
@@ -140,6 +150,7 @@ pub struct Transport {
 
 impl Transport {
     pub fn make_address(&self, fqdn: &str, service: &Service, network_id: &NetworkId) -> String {
+        // let fqdn = format!("{}/$*/", fqdn);
         let tpl: Tpl = [
             ("service", service.to_string()),
             ("fqdn", fqdn.to_string()),

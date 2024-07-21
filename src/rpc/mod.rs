@@ -10,6 +10,8 @@ const SOCKETS_PER_CORE: u64 = 1024;
 pub struct Caps {
     // node system id
     pub system_id: u64,
+    // node system id
+    // pub system_id_hex_string: String,
     // git hash
     pub git_hash: Option<String>,
     // current memory usage in bytes
@@ -26,6 +28,10 @@ impl Caps {
     pub fn system_id(&self) -> u64 {
         self.system_id
     }
+
+    // pub fn system_id_as_hex_str(&self) -> &str {
+    //     self.system_id_hex_string.as_str()
+    // }
 }
 
 #[async_trait]
@@ -41,6 +47,10 @@ pub trait Client: std::fmt::Debug + Sized + Send + Sync + 'static {
     }
 
     async fn connect(&self) -> Result<()> {
+        todo!()
+    }
+
+    async fn ping(&self) -> Result<()> {
         todo!()
     }
 

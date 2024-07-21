@@ -3,6 +3,15 @@ use crate::imports::*;
 use kaspa_rpc_core::GetSystemInfoResponse;
 pub use kaspa_wrpc_client::KaspaRpcClient;
 
+// reduce fd_limit by this amount to ensure the
+// system has enough file descriptors for other
+// tasks (peers, db, etc)
+// default kHOST setup is:
+// outgoing peers: 256
+// incoming peers: 32
+// reserved for db etc.: 1024
+const FD_MARGIN: u64 = 1024+256+32;
+
 #[derive(Debug)]
 pub struct Client {
     client: KaspaRpcClient,
@@ -40,6 +49,10 @@ impl rpc::Client for Client {
         Ok(())
     }
 
+    async fn ping(&self) -> Result<()> {
+        Ok(self.client.ping().await?)
+    }
+
     async fn get_caps(&self) -> Result<Caps> {
         let GetSystemInfoResponse {
             system_id,
@@ -50,13 +63,23 @@ impl rpc::Client for Client {
         } = self.client.get_system_info().await?;
         let cpu_physical_cores = cpu_physical_cores as u64;
         let fd_limit = fd_limit as u64;
-        let socket_capacity = fd_limit.min(cpu_physical_cores * rpc::SOCKETS_PER_CORE);
+        // reduce node's fd_limit by FD_MARGIN to ensure
+        // the system has enough file descriptors for other
+        // tasks (peers, db, etc)
+        let fd_limit_actual = fd_limit.checked_sub(FD_MARGIN).unwrap_or(32);
+        // by default we assume that the node is able to accept
+        // 1024 connections per core (default NGINX worker configuration)
+        // TODO: this should be increased in the future once a custom
+        // proxy is implemented
+        let socket_capacity = fd_limit_actual.min(cpu_physical_cores * rpc::SOCKETS_PER_CORE);
         let system_id = system_id
             .and_then(|v| v[0..8].try_into().ok().map(u64::from_be_bytes))
             .unwrap_or_default();
+        // let system_id_hex_string = format!("{:016x}", system_id);
         let git_hash = git_hash.as_ref().map(ToHex::to_hex);
         Ok(Caps {
             system_id,
+            // system_id_hex_string,
             git_hash,
             total_memory,
             cpu_physical_cores,

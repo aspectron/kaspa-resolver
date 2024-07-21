@@ -1,5 +1,5 @@
 pub use crate::args::Args;
-pub use crate::connection::{Connection, Output};
+pub use crate::connection::{Connection,Status};
 pub use crate::error::Error;
 pub use crate::group::*;
 pub use crate::log::*;
@@ -36,8 +36,8 @@ pub use kaspa_rpc_core::api::rpc::RpcApi;
 pub use kaspa_utils::hex::*;
 pub use rand::Rng;
 pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
-pub use serde_hex::{CompactPfx, SerHex};
-pub use std::collections::hash_map::Entry;
+pub use serde_hex::{Compact, SerHex};
+// pub use std::collections::hash_map::Entry;
 pub use std::collections::{HashMap, HashSet};
 pub use std::fmt::{self, Display, Formatter};
 pub use std::fs;

@@ -10,8 +10,10 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{}: [{:>3}] {}",
-            self.node.uid_as_str(),
+            "[{:016x}:{:016x}] [{:>4}] {}",
+            // self.context().system_id_as_hex_str(),
+            self.context().system_id(),
+            self.node.uid(),
             self.clients(),
             self.node.address
         )
@@ -23,16 +25,27 @@ pub struct Context {
     caps: Arc<OnceLock<Caps>>,
     is_synced: AtomicBool,
     clients: AtomicU64,
+    fqdn: String,
 }
 
 impl Context {
-    pub fn new() -> Self {
+    pub fn new<S>(fqdn: S) -> Self 
+    where S : Display
+    {
         Self {
             caps: Arc::new(OnceLock::new()),
             is_synced: AtomicBool::new(false),
             clients: AtomicU64::new(0),
+            fqdn: fqdn.to_string(),
         }
     }
+
+    pub fn system_id(&self) -> u64 {
+        self.caps.get().map(|caps|caps.system_id).unwrap_or_default()
+    }
+    // pub fn system_id_as_hex_str(&self) -> String {
+    //     self.caps.get().map(|caps|caps.system_id_hex_string.to_string()).unwrap_or("n/a".to_string())
+    // }
 }
 
 #[derive(Debug)]
@@ -48,8 +61,10 @@ where
     client: T,
     shutdown_ctl: DuplexChannel<()>,
     is_delegate: AtomicBool,
+    delegate: Mutex<Option<Delegate>>,
     is_connected: AtomicBool,
     is_online: AtomicBool,
+    is_aggregator: AtomicBool,
     args: Arc<Args>,
 }
 
@@ -70,7 +85,9 @@ where
             .ok_or(Error::ConnectionProtocolEncoding)?;
         let client = T::try_new(encoding, &node.address)?;
 
-        let context = Arc::new(Context::new());
+        let context = Arc::new(Context::new(node.fqdn()));
+
+        // let is_aggregator = params.encoding() == EncodingKind::Borsh;
 
         Ok(Self {
             context: ArcSwap::new(context),
@@ -80,8 +97,10 @@ where
             client,
             shutdown_ctl: DuplexChannel::oneshot(),
             is_delegate: AtomicBool::new(false),
+            delegate: Mutex::new(None),
             is_connected: AtomicBool::new(false),
             is_online: AtomicBool::new(false),
+            is_aggregator: AtomicBool::new(true),
             args: args.clone(),
         })
     }
@@ -139,8 +158,20 @@ where
     }
 
     #[inline]
-    pub fn set_context(&self, context: Arc<Context>) {
+    pub fn network_id(&self) -> NetworkId {
+        self.node.network
+    }
+
+    #[inline]
+    pub fn is_aggregator(&self) -> bool {
+        // self.is_aggregator
+        self.is_aggregator.load(Ordering::Relaxed)
+    }
+
+    #[inline]
+    pub fn bind_context(&self, context: Arc<Context>) {
         self.context.store(context);
+        self.is_aggregator.store(false, Ordering::Relaxed);
     }
 
     #[inline]
@@ -151,6 +182,14 @@ where
     #[inline]
     pub fn is_delegate(&self) -> bool {
         self.is_delegate.load(Ordering::Relaxed)
+    }
+
+    #[inline]
+    // pub fn delegate_fqdn(&self) -> Option<String> {
+    pub fn delegate(&self) -> Option<Delegate> {
+        self.delegate.lock().unwrap().clone()
+        // (!self.is_delegate()).then(|| self.context().fqdn.clone())
+        // self.context().fqdn.clone()
     }
 
     pub fn status(&self) -> &'static str {
@@ -165,6 +204,19 @@ where
         }
     }
 
+    // pub fn address(&self) -> Option<String> {
+    //     if let Some(caps) = self.caps().get() {
+    //         let address = self.node.address_template.replace("$*", caps.system_id_hex.as_str());
+    //         Some(format!(
+    //             "{}: {}",
+    //             self.node.address_template,
+    //             caps.socket_capacity
+    //         ))
+    //     } else {
+    //         None
+    //     }
+    // }
+
     async fn connect(&self) -> Result<()> {
         self.client.connect().await?;
         Ok(())
@@ -176,7 +228,11 @@ where
         let shutdown_ctl_receiver = self.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
 
-        let mut interval = workflow_core::task::interval(Duration::from_secs(1));
+        let mut interval = if self.is_aggregator() {
+            workflow_core::task::interval(SyncSettings::poll())
+        } else {
+            workflow_core::task::interval(SyncSettings::ping())
+        };
 
         loop {
             select! {
@@ -257,24 +313,92 @@ where
     }
 
     async fn update_state(self: &Arc<Self>) -> Result<()> {
+
+        // if !self.is_aggregator() {
+        //     // println!(" --- bailing ... is aggregator...");
+        //     self.client.ping().await?;
+
+        //     return Ok(());
+        // }
+
+        // println!("Updating state");
         if self.caps().get().is_none() {
+            // println!(" $$$ GETTING CAPS $$$");
             let caps = self.client.get_caps().await?;
+            // println!("Got caps: {:?}", caps);
+            // let caps = caps?;
+            // let caps = self.client.get_caps().await?;
+            // println!("Got caps: {:?}", caps);
+            // let delegate = Delegate::new(caps.system_id(), self.node.network_node_uid());
+            let delegate = Delegate::new(caps.system_id(), self.network_id());
 
-            let delegate = Delegate::new(caps.system_id(), self.node.network_node_uid());
-            self.caps().set(caps).unwrap();
+            // ! OnceLock can be hit multiple times ???
+            // self.caps().set(caps).ok();
+            if let Err(err) = self.caps().set(caps) {
+                log_error!("CAPS","Error setting caps: {:?}", err);
+            }
 
-            let mut delegates = self.monitor.delegates();
-            if let Entry::Vacant(e) = delegates.entry(delegate) {
-                e.insert(self.clone());
-                self.is_delegate.store(true, Ordering::Relaxed);
-            } else {
+            let mut delegates = self.monitor.delegates().write().unwrap();
+
+            // if delegates.contains_key(&delegate) {
+            if let Some(_delegate) = delegates.get(&delegate) {
+                println!("--- NOT A DELEGATE {}", self.node().address());
                 self.is_delegate.store(false, Ordering::Relaxed);
-            };
-        }
+                self.delegate.lock().unwrap().replace(delegate);
+            } else {
+                println!("I am a delegate {}", self.node().address());
+                delegates.insert(delegate, self.clone());
+                self.is_delegate.store(true, Ordering::Relaxed);
+                *self.delegate.lock().unwrap() = None;
+            }
 
-        if !self.is_delegate() {
+            // match delegates.entry(delegate) {
+            //     Entry::Vacant(e) => {
+            //         println!("------ DELEGATE ------");
+            //         e.insert(self.clone());
+            //         self.is_delegate.store(true, Ordering::Relaxed);
+            //         self.delegate.lock().unwrap().take();
+            //     }
+            //     Entry::Occupied(e) => {
+            //         self.is_delegate.store(false, Ordering::Relaxed);
+            //         self.delegate.lock().unwrap().replace(delegate);
+            //     }
+            // // } else {
+            //     // println!("!!!!!!! NOT A DELEGATE !!!!!");
+            // };
+            // if let Entry::Vacant(e) = delegates.entry(delegate) {
+            //     println!("------ DELEGATE ------");
+            //     e.insert(self.clone());
+            //     self.is_delegate.store(true, Ordering::Relaxed);
+            // } else {
+            //     // println!("!!!!!!! NOT A DELEGATE !!!!!");
+            //     self.is_delegate.store(false, Ordering::Relaxed);
+            // };
+        } 
+        // else {
+        //     println!("Caps already set");
+        // }
+
+        // if !self.is_aggregator() {
+        //     // println!(" --- bailing ... is aggregator...");
+        //     self.client.ping().await?;
+
+        //     return Ok(());
+        // }
+
+
+        if !self.is_delegate() || !self.is_aggregator() {
+            // println!("ping...");
+
+            // self.client.ping().await?;
+            if let Err(err) = self.client.ping().await {
+                log_error!("Ping","{err}");
+            }
+
             return Ok(());
         }
+
+        // println!("## ==> GETTING SYNC STATUS");
 
         match self.client.get_sync().await {
             Ok(is_synced) => {
@@ -339,6 +463,82 @@ where
         Self {
             uid: connection.node.uid_as_str(),
             url: connection.node.address(),
+        }
+    }
+}
+
+
+#[derive(Serialize)]
+pub struct Status<'a> {
+    #[serde(with = "SerHex::<Compact>")]
+    pub sid: u64,
+    #[serde(with = "SerHex::<Compact>")]
+    pub uid: u64,
+    pub url: &'a str,
+    pub protocol: ProtocolKind,
+    pub encoding: EncodingKind,
+    // pub protocol: &'static str,
+    // pub encoding: &'static str,
+    pub tls: TlsKind,
+    pub network: &'a NetworkId,
+    pub cores: u64,
+    // pub online: bool,
+    pub status: &'static str,
+    pub clients: u64,
+    pub capacity: u64,
+    pub aggregator : bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delegate: Option<Delegate>,
+}
+
+impl<'a, T> From<&'a Arc<Connection<T>>> for Status<'a>
+where
+    T: rpc::Client + Send + Sync + 'static,
+{
+    fn from(connection: &'a Arc<Connection<T>>) -> Self {
+        let node = connection.node();
+        let uid = node.uid();
+        let url = node.address.as_str();
+        let protocol = node.params().protocol();
+        let encoding = node.params().encoding();
+        let tls = node.params().tls();
+        // let tls = node.tls;
+        let network = &node.network;
+        let status = connection.status();
+        // let online = connection.online();
+        let clients = connection.clients();
+        let (sid, capacity, cores) = connection
+            // .context()
+            .caps()
+            .get()
+            .map(|caps| {
+                (
+                    caps.system_id,
+                    caps.socket_capacity,
+                    caps.cpu_physical_cores,
+                )
+            })
+            .unwrap_or((0, 0, 0));
+        let aggregator = connection.is_aggregator();
+        let delegate = connection.delegate();
+
+        println!("address : {}  delegate: {:?}", node.address(), delegate);
+
+        Self {
+            sid,
+            uid,
+            url,
+            protocol,
+            encoding,
+            tls,
+            network,
+            cores,
+            status,
+            // online,
+            clients,
+            capacity,
+            aggregator,
+            delegate,
         }
     }
 }

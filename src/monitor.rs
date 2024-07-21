@@ -9,7 +9,7 @@ where
 {
     args: Arc<Args>,
     connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection<T>>>>>,
-    delegates: Mutex<AHashMap<Delegate, Arc<Connection<T>>>>,
+    delegates: RwLock<AHashMap<Delegate, Arc<Connection<T>>>>,
     sorts: AHashMap<PathParams, AtomicBool>,
     channel: Channel<PathParams>,
     shutdown_ctl: DuplexChannel<()>,
@@ -35,11 +35,17 @@ where
     T: rpc::Client + Send + Sync + 'static,
 {
     pub fn new(args: &Arc<Args>) -> Self {
+
+        let sorts = PathParams::iter()
+            .map(|params| (params, AtomicBool::new(false)))
+            .collect();
+
+
         Self {
             args: args.clone(),
             connections: Default::default(),
             delegates: Default::default(),
-            sorts: Default::default(),
+            sorts,//: Default::default(),
             channel: Channel::unbounded(),
             shutdown_ctl: DuplexChannel::oneshot(),
 
@@ -52,8 +58,11 @@ where
         self.args.verbose
     }
 
-    pub fn delegates(&self) -> MutexGuard<AHashMap<Delegate, Arc<Connection<T>>>> {
-        self.delegates.lock().unwrap()
+    // pub fn delegates(&self) -> MutexGuard<AHashMap<Delegate, Arc<Connection<T>>>> {
+    //     self.delegates.lock().unwrap()
+    // }
+    pub fn delegates(&self) -> &RwLock<AHashMap<Delegate, Arc<Connection<T>>>> {
+        &self.delegates//.lock().unwrap()
     }
 
     pub fn connections(&self) -> AHashMap<PathParams, Vec<Arc<Connection<T>>>> {
@@ -124,9 +133,9 @@ where
         for (_network_uid, transport_map) in targets.iter() {
             if let Some(wrpc_borsh) = transport_map.get(&TransportKind::WrpcBorsh) {
                 if let Some(wrpc_json) = transport_map.get(&TransportKind::WrpcJson) {
-                    wrpc_json.set_context(wrpc_borsh.context());
+                    wrpc_json.bind_context(wrpc_borsh.context());
                 } else if let Some(grpc) = transport_map.get(&TransportKind::Grpc) {
-                    grpc.set_context(wrpc_borsh.context());
+                    grpc.bind_context(wrpc_borsh.context());
                 }
             }
         }
@@ -248,69 +257,4 @@ where
 
     // Fallback in case of error (shouldn't happen)
     nodes[0]
-}
-
-#[derive(Serialize)]
-pub struct Status<'a> {
-    #[serde(with = "SerHex::<CompactPfx>")]
-    pub uid: u64,
-    #[serde(with = "SerHex::<CompactPfx>")]
-    pub sid: u64,
-    pub url: &'a str,
-    pub protocol: ProtocolKind,
-    pub encoding: EncodingKind,
-    // pub protocol: &'static str,
-    // pub encoding: &'static str,
-    pub tls: TlsKind,
-    pub network: &'a NetworkId,
-    pub cores: u64,
-    pub online: bool,
-    pub status: &'static str,
-    pub clients: u64,
-    pub capacity: u64,
-}
-
-impl<'a, T> From<&'a Arc<Connection<T>>> for Status<'a>
-where
-    T: rpc::Client + Send + Sync + 'static,
-{
-    fn from(connection: &'a Arc<Connection<T>>) -> Self {
-        let node = connection.node();
-        let uid = node.uid();
-        let url = node.address.as_str();
-        let protocol = node.params().protocol();
-        let encoding = node.params().encoding();
-        let tls = node.params().tls();
-        // let tls = node.tls;
-        let network = &node.network;
-        let status = connection.status();
-        let online = connection.online();
-        let clients = connection.clients();
-        let (sid, capacity, cores) = connection
-            // .context()
-            .caps()
-            .get()
-            .map(|caps| {
-                (
-                    caps.system_id,
-                    caps.socket_capacity,
-                    caps.cpu_physical_cores,
-                )
-            })
-            .unwrap_or((0, 0, 0));
-        Self {
-            uid,
-            sid,
-            url,
-            protocol,
-            encoding,
-            tls,
-            network,
-            cores,
-            status,
-            online,
-            clients,
-            capacity,
-        }
-    }
 }

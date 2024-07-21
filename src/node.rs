@@ -86,6 +86,11 @@ impl NodeConfig {
     }
 
     #[inline]
+    pub fn fqdn(&self) -> &str {
+        &self.fqdn
+    }
+
+    #[inline]
     pub fn service(&self) -> Service {
         self.service
     }

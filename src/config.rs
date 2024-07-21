@@ -326,6 +326,7 @@ pub fn unpack() -> Result<()> {
 pub struct Settings {
     updates: Updates,
     limits: Limits,
+    sync: SyncSettings,
 }
 
 impl Settings {
@@ -367,5 +368,20 @@ pub struct Limits {
 impl Limits {
     pub fn fd() -> u64 {
         Settings::get().limits.fd
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SyncSettings {
+    pub poll: u64,
+    pub ping: u64,
+}
+
+impl SyncSettings {
+    pub fn poll() -> Duration {
+        Duration::from_millis(Settings::get().sync.poll)
+    }
+    pub fn ping() -> Duration {
+        Duration::from_millis(Settings::get().sync.poll)
     }
 }

@@ -283,8 +283,8 @@ impl Resolver {
 
         let status = kaspa
             .iter()
-            .map(Output::from)
-            .chain(sparkle.iter().map(Output::from))
+            .map(Status::from)
+            .chain(sparkle.iter().map(Status::from))
             .collect::<Vec<_>>();
 
         with_json(status)
@@ -295,7 +295,7 @@ impl Resolver {
         T: rpc::Client + Send + Sync + 'static,
     {
         let connections = monitor.get_all();
-        let status = connections.iter().map(Output::from).collect::<Vec<_>>();
+        let status = connections.iter().map(Status::from).collect::<Vec<_>>();
 
         with_json(status)
     }

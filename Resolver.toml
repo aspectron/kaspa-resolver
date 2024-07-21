@@ -1,6 +1,10 @@
 [limits]
 fd = 8192
 
+[sync]
+poll = 1000
+ping = 3500
+
 [updates]
 url = "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/data/"
 duration = 12.0 # hours
