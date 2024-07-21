@@ -58,14 +58,16 @@ impl Resolver {
 
         let this = self.clone();
         let router = router.route(
-            "/v2/kaspa/wrpc/:tls/:encoding/:network",
+            // "/v2/kaspa/wrpc/:tls/:encoding/:network",
+            "/v2/kaspa/:network/:tls/:protocol/:encoding",
             get(|path| async move { this.get_elected_kaspa(path).await }),
             // get(|query, path| async move { this.get_elected_kaspa(query, path).await }),
         );
 
         let this = self.clone();
         let router = router.route(
-            "/v2/sparkle/wrpc/:tls/:encoding/:network",
+            "/v2/sparkle/:network/:tls/:protocol/:encoding",
+            // "/v2/sparkle/wrpc/:tls/:encoding/:network",
             get(|path| async move { this.get_elected_sparkle(path).await }),
             // get(|query, path| async move { this.get_elected_sparkle(query, path).await }),
         );

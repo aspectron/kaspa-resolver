@@ -1,24 +1,22 @@
 use crate::imports::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Tls {
-    Ssl,
-    None,
-    Any,
-}
-
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct PathParams {
-    pub transport_kind: TransportKind,
+    pub protocol: ProtocolKind,
+    pub encoding: EncodingKind,
+    // pub transport_kind: TransportKind,
     pub network: NetworkId,
-    pub tls: bool,
+    pub tls: TlsKind,
 }
 
 impl PathParams {
-    pub fn new(transport_kind: TransportKind, tls: bool, network: NetworkId) -> Self {
+    pub fn new(transport_kind: TransportKind, tls: TlsKind, network: NetworkId) -> Self {
+        let protocol = transport_kind.protocol();
+        let encoding = transport_kind.encoding();
         Self {
-            transport_kind,
+            protocol,
+            encoding,
+            // transport_kind,
             tls,
             network,
         }
@@ -27,25 +25,34 @@ impl PathParams {
     pub fn iter() -> impl Iterator<Item = PathParams> {
         NetworkId::iter().flat_map(move |network_id| {
             TransportKind::iter()
-                .map(move |transport_kind| PathParams::new(*transport_kind, true, network_id))
-                .chain(
-                    TransportKind::iter().map(move |transport_kind| {
-                        PathParams::new(*transport_kind, false, network_id)
-                    }),
-                )
+                .map(move |transport_kind| {
+                    PathParams::new(*transport_kind, TlsKind::Tls, network_id)
+                })
+                .chain(TransportKind::iter().map(move |transport_kind| {
+                    PathParams::new(*transport_kind, TlsKind::None, network_id)
+                }))
         })
+    }
+
+    #[inline]
+    pub fn protocol(&self) -> ProtocolKind {
+        self.protocol
+    }
+
+    #[inline]
+    pub fn encoding(&self) -> EncodingKind {
+        self.encoding
+    }
+
+    #[inline]
+    pub fn tls(&self) -> TlsKind {
+        self.tls
     }
 }
 
 impl fmt::Display for PathParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}:{}:{}",
-            self.transport_kind.protocol(),
-            self.transport_kind.encoding(),
-            self.network
-        )
+        write!(f, "{}:{}:{}", self.protocol, self.encoding, self.network)
     }
 }
 

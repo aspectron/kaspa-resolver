@@ -80,7 +80,7 @@ where
         for params in PathParams::iter() {
             let nodes = nodes
                 .iter()
-                .filter(|node| node.params() == params)
+                .filter(|node| node.params() == &params)
                 .collect::<Vec<_>>();
 
             let list = connections.entry(params).or_default();
@@ -257,9 +257,11 @@ pub struct Status<'a> {
     #[serde(with = "SerHex::<CompactPfx>")]
     pub sid: u64,
     pub url: &'a str,
-    pub protocol: &'static str,
-    pub encoding: &'static str,
-    pub tls: bool,
+    pub protocol: ProtocolKind,
+    pub encoding: EncodingKind,
+    // pub protocol: &'static str,
+    // pub encoding: &'static str,
+    pub tls: TlsKind,
     pub network: &'a NetworkId,
     pub cores: u64,
     pub online: bool,
@@ -276,9 +278,10 @@ where
         let node = connection.node();
         let uid = node.uid();
         let url = node.address.as_str();
-        let protocol = node.transport_kind.protocol();
-        let encoding = node.transport_kind.encoding();
-        let tls = node.tls;
+        let protocol = node.params().protocol();
+        let encoding = node.params().encoding();
+        let tls = node.params().tls();
+        // let tls = node.tls;
         let network = &node.network;
         let status = connection.status();
         let online = connection.online();

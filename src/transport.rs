@@ -1,5 +1,88 @@
 use crate::imports::*;
 
+// #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+pub enum TlsKind {
+    Tls,
+    None,
+    Any,
+}
+
+// impl PartialEq for TlsKind {
+//     fn eq(&self, other: &Self) -> bool {
+//         matches!(
+//             (self, other),
+//             (TlsKind::Tls, TlsKind::Tls)
+//                 | (TlsKind::None, TlsKind::None)
+//                 | (TlsKind::Any, TlsKind::Tls)
+//                 | (TlsKind::Any, TlsKind::None)
+//                 | (TlsKind::Tls, TlsKind::Any)
+//                 | (TlsKind::None, TlsKind::Any)
+//         )
+//     }
+// }
+
+impl From<bool> for TlsKind {
+    fn from(b: bool) -> Self {
+        if b {
+            TlsKind::Tls
+        } else {
+            TlsKind::None
+        }
+    }
+}
+
+#[derive(
+    Debug, Describe, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
+#[serde(rename_all = "kebab-case")]
+pub enum ProtocolKind {
+    Wrpc,
+    Grpc,
+}
+
+impl Display for ProtocolKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            ProtocolKind::Wrpc => "wrpc",
+            ProtocolKind::Grpc => "grpc",
+        };
+        f.write_str(s)
+    }
+}
+
+#[derive(
+    Debug, Describe, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
+#[serde(rename_all = "kebab-case")]
+pub enum EncodingKind {
+    Borsh,
+    Json,
+    Protobuf,
+}
+
+impl Display for EncodingKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            EncodingKind::Borsh => "borsh",
+            EncodingKind::Json => "json",
+            EncodingKind::Protobuf => "protobuf",
+        };
+        f.write_str(s)
+    }
+}
+
+impl EncodingKind {
+    pub fn wrpc_encoding(&self) -> Option<WrpcEncoding> {
+        match self {
+            EncodingKind::Borsh => Some(WrpcEncoding::Borsh),
+            EncodingKind::Json => Some(WrpcEncoding::SerdeJson),
+            EncodingKind::Protobuf => None,
+        }
+    }
+}
+
 #[derive(
     Debug, Describe, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
 )]
@@ -22,27 +105,19 @@ impl Display for TransportKind {
 }
 
 impl TransportKind {
-    pub fn encoding(&self) -> &'static str {
+    pub fn protocol(&self) -> ProtocolKind {
         match self {
-            TransportKind::WrpcBorsh => "borsh",
-            TransportKind::WrpcJson => "json",
-            TransportKind::Grpc => "grpc",
+            TransportKind::WrpcBorsh => ProtocolKind::Wrpc,
+            TransportKind::WrpcJson => ProtocolKind::Wrpc,
+            TransportKind::Grpc => ProtocolKind::Grpc,
         }
     }
 
-    pub fn protocol(&self) -> &'static str {
+    pub fn encoding(&self) -> EncodingKind {
         match self {
-            TransportKind::WrpcBorsh => "wrpc",
-            TransportKind::WrpcJson => "wrpc",
-            TransportKind::Grpc => "grpc",
-        }
-    }
-
-    pub fn wrpc_encoding(&self) -> Option<WrpcEncoding> {
-        match self {
-            TransportKind::WrpcBorsh => Some(WrpcEncoding::Borsh),
-            TransportKind::WrpcJson => Some(WrpcEncoding::SerdeJson),
-            TransportKind::Grpc => None,
+            TransportKind::WrpcBorsh => EncodingKind::Borsh,
+            TransportKind::WrpcJson => EncodingKind::Json,
+            TransportKind::Grpc => EncodingKind::Protobuf,
         }
     }
 }

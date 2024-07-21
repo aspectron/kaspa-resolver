@@ -15,8 +15,6 @@ pub struct NodeConfig {
     // protocol+encoding
     #[serde(rename = "transport-type")]
     pub transport_kind: TransportKind,
-    // does this configuration represents a tls connection
-    pub tls: bool,
     // node network id
     pub network: NetworkId,
     // entry is enabled
@@ -25,6 +23,8 @@ pub struct NodeConfig {
     pub fqdn: String,
     // contains hash(fqdn+network_id)
     pub network_node_uid: u64,
+
+    pub params: PathParams,
 }
 
 impl Eq for NodeConfig {}
@@ -62,11 +62,13 @@ impl NodeConfig {
 
         let network_node_uid = xxh3_64(format!("{fqdn}{network}{tls}").as_bytes());
 
+        let params = PathParams::new(transport.kind, transport.tls.into(), network);
+
         let node = Self {
             uid,
             uid_string,
             service: *service,
-            tls: *tls,
+            params,
             fqdn,
             address,
             transport_kind: *kind,
@@ -79,8 +81,8 @@ impl NodeConfig {
     }
 
     #[inline]
-    pub fn params(&self) -> PathParams {
-        PathParams::new(self.transport_kind, self.tls, self.network)
+    pub fn params(&self) -> &PathParams {
+        &self.params
     }
 
     #[inline]

@@ -63,9 +63,9 @@ where
         _sender: Sender<PathParams>,
         args: &Arc<Args>,
     ) -> Result<Self> {
-        let params = node.params();
-        let encoding = node
-            .transport_kind
+        let params = *node.params();
+        let encoding = params
+            .encoding()
             .wrpc_encoding()
             .ok_or(Error::ConnectionProtocolEncoding)?;
         let client = T::try_new(encoding, &node.address)?;
