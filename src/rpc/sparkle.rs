@@ -7,21 +7,8 @@ pub struct Client {
     url: String,
 }
 
-#[async_trait]
-impl rpc::Client for Client {
-    fn service() -> Service {
-        Service::Sparkle
-    }
-
-    fn try_new(encoding: WrpcEncoding, url: &str) -> Result<Self> {
-        let client = SparkleRpcClient::try_new(url, Some(encoding))?;
-
-        Ok(Self {
-            client,
-            url: url.to_string(),
-        })
-    }
-
+// #[async_trait]
+impl rpc::ClientT for Client {
     fn multiplexer(&self) -> Multiplexer<Ctl> {
         self.client.ctl_multiplexer()
     }

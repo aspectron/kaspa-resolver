@@ -10,7 +10,7 @@ pub use kaspa_wrpc_client::KaspaRpcClient;
 // outgoing peers: 256
 // incoming peers: 32
 // reserved for db etc.: 1024
-const FD_MARGIN: u64 = 1024+256+32;
+const FD_MARGIN: u64 = 1024 + 256 + 32;
 
 #[derive(Debug)]
 pub struct Client {
@@ -18,13 +18,8 @@ pub struct Client {
     url: String,
 }
 
-#[async_trait]
-impl rpc::Client for Client {
-    fn service() -> Service {
-        Service::Kaspa
-    }
-
-    fn try_new(encoding: WrpcEncoding, url: &str) -> Result<Self> {
+impl Client {
+    pub fn try_new(encoding: WrpcEncoding, url: &str) -> Result<Self> {
         let client = KaspaRpcClient::new(encoding, Some(url), None, None, None)?;
 
         Ok(Self {
@@ -32,7 +27,9 @@ impl rpc::Client for Client {
             url: url.to_string(),
         })
     }
+}
 
+impl rpc::ClientT for Client {
     fn multiplexer(&self) -> Multiplexer<Ctl> {
         self.client.ctl_multiplexer()
     }

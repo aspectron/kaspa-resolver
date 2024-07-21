@@ -21,7 +21,7 @@ pub struct Args {
     pub verbose: bool,
     /// Tracing mode
     pub trace: bool,
-    // / Show node data on each election
+    // Show node data on each election
     // pub election: bool,
     /// Enable resolver status access via `/status`
     pub status: bool,
@@ -71,15 +71,8 @@ impl Args {
 
         let trace = matches.get_one::<bool>("trace").cloned().unwrap_or(false);
         let verbose = matches.get_one::<bool>("verbose").cloned().unwrap_or(false);
-        // let election = matches.get_one::<bool>("trace").cloned().unwrap_or(false);
+        // let election = matches.get_one::<bool>("election").cloned().unwrap_or(false);
         let status = matches.get_one::<bool>("status").cloned().unwrap_or(false);
-
-        // let enable_debug_mode = matches.get_one::<bool>("debug").cloned().unwrap_or(false);
-
-        // let network_id = matches
-        //     .get_one::<NetworkId>("network")
-        //     .cloned()
-        //     .unwrap_or(NetworkId::with_suffix(NetworkType::Testnet, 11));
 
         let rate_limit = matches.get_one::<RateLimit>("rate-limit").cloned();
         let listen = matches
