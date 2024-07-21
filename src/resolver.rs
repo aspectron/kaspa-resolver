@@ -18,8 +18,8 @@ use tower_http::cors::{Any, CorsLayer};
 struct Inner {
     args: Arc<Args>,
     http_server: Mutex<Option<(TcpListener, Router)>>,
-    kaspa: Arc<Monitor<rpc::kaspa::Client>>,
-    sparkle: Arc<Monitor<rpc::sparkle::Client>>,
+    kaspa: Arc<Monitor>,
+    sparkle: Arc<Monitor>,
     shutdown_ctl: DuplexChannel<()>,
     events: Channel<Events>,
 }
@@ -29,8 +29,8 @@ impl Inner {
         Self {
             args: args.clone(),
             http_server: Default::default(),
-            kaspa: Arc::new(Monitor::new(args)),
-            sparkle: Arc::new(Monitor::new(args)),
+            kaspa: Arc::new(Monitor::new(args, Service::Kaspa)),
+            sparkle: Arc::new(Monitor::new(args, Service::Sparkle)),
             shutdown_ctl: DuplexChannel::oneshot(),
             events: Channel::unbounded(),
         }
@@ -58,7 +58,6 @@ impl Resolver {
 
         let this = self.clone();
         let router = router.route(
-            // "/v2/kaspa/wrpc/:tls/:encoding/:network",
             "/v2/kaspa/:network/:tls/:protocol/:encoding",
             get(|path| async move { this.get_elected_kaspa(path).await }),
             // get(|query, path| async move { this.get_elected_kaspa(query, path).await }),
@@ -67,7 +66,6 @@ impl Resolver {
         let this = self.clone();
         let router = router.route(
             "/v2/sparkle/:network/:tls/:protocol/:encoding",
-            // "/v2/sparkle/wrpc/:tls/:encoding/:network",
             get(|path| async move { this.get_elected_sparkle(path).await }),
             // get(|query, path| async move { this.get_elected_sparkle(query, path).await }),
         );
@@ -77,18 +75,23 @@ impl Resolver {
             let this1 = self.clone();
             let this2 = self.clone();
             let this3 = self.clone();
+            let this4 = self.clone();
             router
                 .route(
                     "/status",
-                    get(|| async move { this1.get_status_all_nodes().await }),
+                    get(|| async move { this1.get_status_all_nodes(true).await }),
+                )
+                .route(
+                    "/delegates",
+                    get(|| async move { this2.get_status_all_nodes(false).await }),
                 )
                 .route(
                     "/status/kaspa",
-                    get(|| async move { this2.get_status(&this2.inner.kaspa).await }),
+                    get(|| async move { this3.get_status(&this3.inner.kaspa, false).await }),
                 )
                 .route(
                     "/status/sparkle",
-                    get(|| async move { this3.get_status(&this3.inner.sparkle).await }),
+                    get(|| async move { this4.get_status(&this4.inner.sparkle, false).await }),
                 )
         } else {
             log_success!("Routes", "Disabling status routes");
@@ -147,20 +150,9 @@ impl Resolver {
         Ok(())
     }
 
-    // pub fn nodes(&self) -> Vec<Arc<NodeConfig>> {
-    //     self.inner.nodes.lock().unwrap().clone()
-    // }
-
     pub async fn start(self: &Arc<Self>) -> Result<()> {
-        // let mut nodes = self.nodes();
-        // let mut nodes = load_config()?;
-
         self.inner.kaspa.start().await?;
         self.inner.sparkle.start().await?;
-        // let mut nodes = load_config()?;
-
-        // self.inner.kaspa.start(&mut nodes).await?;
-        // self.inner.sparkle.start(&mut nodes).await?;
 
         let this = self.clone();
         spawn(async move {
@@ -269,17 +261,11 @@ impl Resolver {
         }
     }
 
-    // async fn update(self: &Arc<Self>) -> Result<()> {
-    //     let global_node_list = update_global_config().await?;
-    //     self.update_nodes(global_node_list).await?;
-    //     Ok(())
-    // }
-
     // respond with a JSON object containing the status of all nodes
-    async fn get_status_all_nodes(&self) -> impl IntoResponse {
-        let kaspa = self.inner.kaspa.get_all();
+    async fn get_status_all_nodes(&self, delegates: bool) -> impl IntoResponse {
+        let kaspa = self.inner.kaspa.get_all(delegates);
 
-        let sparkle = self.inner.sparkle.get_all();
+        let sparkle = self.inner.sparkle.get_all(delegates);
 
         let status = kaspa
             .iter()
@@ -290,11 +276,8 @@ impl Resolver {
         with_json(status)
     }
 
-    async fn get_status<T>(&self, monitor: &Monitor<T>) -> impl IntoResponse
-    where
-        T: rpc::Client + Send + Sync + 'static,
-    {
-        let connections = monitor.get_all();
+    async fn get_status(&self, monitor: &Monitor, delegates: bool) -> impl IntoResponse {
+        let connections = monitor.get_all(delegates);
         let status = connections.iter().map(Status::from).collect::<Vec<_>>();
 
         with_json(status)

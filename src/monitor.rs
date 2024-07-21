@@ -3,25 +3,17 @@ use crate::imports::*;
 /// Monitor receives updates from [Connection] monitoring tasks
 /// and updates the descriptors for each [Params] based on the
 /// connection store (number of connections * bias).
-pub struct Monitor<T>
-where
-    T: rpc::Client + Send + Sync + 'static,
-{
+pub struct Monitor {
     args: Arc<Args>,
-    connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection<T>>>>>,
-    delegates: RwLock<AHashMap<Delegate, Arc<Connection<T>>>>,
+    connections: RwLock<AHashMap<PathParams, Vec<Arc<Connection>>>>,
+    delegates: RwLock<AHashMap<Delegate, Arc<Connection>>>,
     sorts: AHashMap<PathParams, AtomicBool>,
     channel: Channel<PathParams>,
     shutdown_ctl: DuplexChannel<()>,
-
-    // ---
-    _phantom: std::marker::PhantomData<T>,
+    service: Service,
 }
 
-impl<T> fmt::Debug for Monitor<T>
-where
-    T: rpc::Client + Send + Sync + 'static,
-{
+impl fmt::Debug for Monitor {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Monitor")
             .field("verbose", &self.verbose())
@@ -30,27 +22,20 @@ where
     }
 }
 
-impl<T> Monitor<T>
-where
-    T: rpc::Client + Send + Sync + 'static,
-{
-    pub fn new(args: &Arc<Args>) -> Self {
-
+impl Monitor {
+    pub fn new(args: &Arc<Args>, service: Service) -> Self {
         let sorts = PathParams::iter()
             .map(|params| (params, AtomicBool::new(false)))
             .collect();
-
 
         Self {
             args: args.clone(),
             connections: Default::default(),
             delegates: Default::default(),
-            sorts,//: Default::default(),
+            sorts,
             channel: Channel::unbounded(),
             shutdown_ctl: DuplexChannel::oneshot(),
-
-            // ---
-            _phantom: Default::default(),
+            service,
         }
     }
 
@@ -58,14 +43,11 @@ where
         self.args.verbose
     }
 
-    // pub fn delegates(&self) -> MutexGuard<AHashMap<Delegate, Arc<Connection<T>>>> {
-    //     self.delegates.lock().unwrap()
-    // }
-    pub fn delegates(&self) -> &RwLock<AHashMap<Delegate, Arc<Connection<T>>>> {
-        &self.delegates//.lock().unwrap()
+    pub fn delegates(&self) -> &RwLock<AHashMap<Delegate, Arc<Connection>>> {
+        &self.delegates
     }
 
-    pub fn connections(&self) -> AHashMap<PathParams, Vec<Arc<Connection<T>>>> {
+    pub fn connections(&self) -> AHashMap<PathParams, Vec<Arc<Connection>>> {
         self.connections.read().unwrap().clone()
     }
 
@@ -76,7 +58,7 @@ where
     ) -> Result<()> {
         let mut nodes = Vec::new();
         global_node_list.retain(|node| {
-            if node.service() == T::service() {
+            if node.service() == self.service {
                 nodes.push(node.clone());
                 false
             } else {
@@ -133,17 +115,14 @@ where
         for (_network_uid, transport_map) in targets.iter() {
             if let Some(wrpc_borsh) = transport_map.get(&TransportKind::WrpcBorsh) {
                 if let Some(wrpc_json) = transport_map.get(&TransportKind::WrpcJson) {
-                    wrpc_json.bind_context(wrpc_borsh.context());
+                    wrpc_json.bind_delegate(Some(wrpc_borsh.clone()));
                 } else if let Some(grpc) = transport_map.get(&TransportKind::Grpc) {
-                    grpc.bind_context(wrpc_borsh.context());
+                    grpc.bind_delegate(Some(wrpc_borsh.clone()));
                 }
             }
         }
 
         *self.connections.write().unwrap() = connections;
-
-        // flush all params to the update channel to refresh selected descriptors
-        // PathParams::iter().for_each(|param| self.channel.sender.try_send(param).unwrap());
 
         Ok(())
     }
@@ -203,9 +182,18 @@ where
     }
 
     // /// Get the status of all nodes as a JSON string (available via `/status` endpoint if enabled).
-    pub fn get_all(&self) -> Vec<Arc<Connection<T>>> {
+    pub fn get_all(&self, delegates: bool) -> Vec<Arc<Connection>> {
         let connections = self.connections();
-        let nodes = connections.values().flatten().cloned().collect::<Vec<_>>();
+        let nodes = if delegates {
+            connections
+                .values()
+                .flatten()
+                .filter(|connection| connection.is_delegate())
+                .cloned()
+                .collect::<Vec<_>>()
+        } else {
+            connections.values().flatten().cloned().collect::<Vec<_>>()
+        };
         nodes
     }
 
@@ -235,10 +223,7 @@ where
     }
 }
 
-fn select_with_weighted_rng<T>(nodes: Vec<&Arc<Connection<T>>>) -> &Arc<Connection<T>>
-where
-    T: rpc::Client + Send + Sync + 'static,
-{
+fn select_with_weighted_rng(nodes: Vec<&Arc<Connection>>) -> &Arc<Connection> {
     // Calculate total weight based on the position in the sorted list
     let total_weight: usize = nodes.iter().enumerate().map(|(i, _)| nodes.len() - i).sum();
 

@@ -7,7 +7,6 @@ pub struct NodeConfig {
     pub uid: u64,
     #[serde(skip)]
     pub uid_string: String,
-
     // service type
     pub service: Service,
     // public URL for the node connection
@@ -58,7 +57,7 @@ impl NodeConfig {
         let address = address.to_string();
         let fqdn = fqdn.to_string();
         let uid = xxh3_64(address.as_bytes());
-        let uid_string = format!("{uid:x}");
+        let uid_string = format!("{uid:016x}");
 
         let network_node_uid = xxh3_64(format!("{fqdn}{network}{tls}").as_bytes());
 
@@ -83,11 +82,6 @@ impl NodeConfig {
     #[inline]
     pub fn params(&self) -> &PathParams {
         &self.params
-    }
-
-    #[inline]
-    pub fn fqdn(&self) -> &str {
-        &self.fqdn
     }
 
     #[inline]

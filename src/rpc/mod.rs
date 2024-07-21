@@ -10,8 +10,6 @@ const SOCKETS_PER_CORE: u64 = 1024;
 pub struct Caps {
     // node system id
     pub system_id: u64,
-    // node system id
-    // pub system_id_hex_string: String,
     // git hash
     pub git_hash: Option<String>,
     // current memory usage in bytes
@@ -28,41 +26,42 @@ impl Caps {
     pub fn system_id(&self) -> u64 {
         self.system_id
     }
-
-    // pub fn system_id_as_hex_str(&self) -> &str {
-    //     self.system_id_hex_string.as_str()
-    // }
 }
 
-#[async_trait]
-pub trait Client: std::fmt::Debug + Sized + Send + Sync + 'static {
-    fn try_new(_encoding: WrpcEncoding, _url: &str) -> Result<Self> {
-        todo!()
-    }
+#[enum_dispatch]
+#[derive(Debug)]
+pub enum Client {
+    Kaspa(kaspa::Client),
+    Sparkle(sparkle::Client),
+}
 
-    fn service() -> Service;
-
+#[enum_dispatch(Client)]
+pub trait ClientT: std::fmt::Debug + Sized + Send + Sync + 'static {
     fn multiplexer(&self) -> Multiplexer<Ctl> {
-        todo!()
+        unimplemented!()
     }
 
     async fn connect(&self) -> Result<()> {
-        todo!()
+        unimplemented!()
     }
 
     async fn ping(&self) -> Result<()> {
-        todo!()
+        unimplemented!()
     }
 
     async fn get_caps(&self) -> Result<Caps> {
-        todo!()
+        unimplemented!()
     }
 
     async fn get_sync(&self) -> Result<bool> {
-        todo!()
+        unimplemented!()
     }
 
     async fn get_active_connections(&self) -> Result<u64> {
-        todo!()
+        unimplemented!()
     }
 }
+
+// impl ClientT for Client {
+
+// }
