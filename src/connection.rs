@@ -408,7 +408,7 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
                     caps.cpu_physical_cores,
                 )
             })
-            .unwrap_or_else(||("n/a".to_string(), 0, 0, 0));
+            .unwrap_or_else(|| ("n/a".to_string(), 0, 0, 0));
 
         let delegates = connection
             .resolve_delegates()

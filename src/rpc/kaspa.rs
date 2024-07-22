@@ -9,7 +9,7 @@ pub use kaspa_wrpc_client::KaspaRpcClient;
 // while default kHOST setup is:
 // outgoing peers: 256
 // incoming peers: 32
-// peers are included the reported 
+// peers are included the reported
 // node connection count
 // reserved for db etc.: 1024
 const FD_MARGIN: u64 = 1024;
