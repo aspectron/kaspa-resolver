@@ -195,12 +195,12 @@ impl Resolver {
                             match event {
                                 Events::Start => {
                                     if let Err(err) = self.update(true).await {
-                                        log_error!("Config", "{err}");
+                                        log_error!("Config", "[startup] {err}");
                                     }
                                 },
                                 Events::Update => {
                                     if let Err(err) = self.update(false).await {
-                                        log_error!("Config", "{err}");
+                                        log_error!("Config", "[update] {err}");
                                     }
                                 },
                             }

@@ -139,9 +139,11 @@ fn local_config_file() -> String {
 }
 
 fn load_key() -> Result<Secret> {
-    Ok(Secret::from(fs::read(
-        global_config_folder().join(key_file()),
-    )?))
+    let key_path = global_config_folder().join(key_file());
+    if !key_path.exists() {
+        return Err(Error::KeyNotFound);
+    }
+    Ok(Secret::from(fs::read(key_path)?))
 }
 
 pub fn locate_local_config() -> Option<PathBuf> {
@@ -193,6 +195,8 @@ pub fn load_default_config() -> Result<Vec<Arc<NodeConfig>>> {
 
 pub async fn update_global_config() -> Result<Option<Vec<Arc<NodeConfig>>>> {
     static HASH: Mutex<Option<Vec<u8>>> = Mutex::new(None);
+
+    log_info!("Config", "Updating resolver config");
 
     let url = format!("{}{}", Updates::url(), global_config_file());
     let data = reqwest::get(&url).await?.bytes().await?.to_vec();

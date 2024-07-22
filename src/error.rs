@@ -59,6 +59,9 @@ pub enum Error {
     #[error("Could not locate local config")]
     LocalConfigNotFound,
 
+    #[error("Could not locate key file")]
+    KeyNotFound,
+
     #[error("Passwords do not match")]
     PasswordsDoNotMatch,
 }

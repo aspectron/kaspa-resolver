@@ -2,6 +2,10 @@ pub mod impls {
     use console::style;
     use std::fmt;
 
+    pub fn log_info(source: &str, args: &fmt::Arguments<'_>) {
+        println!("{:>12} {}", style(source).cyan().bold(), args);
+    }
+
     pub fn log_success(source: &str, args: &fmt::Arguments<'_>) {
         println!("{:>12} {}", style(source).green().bold(), args);
     }
@@ -14,6 +18,15 @@ pub mod impls {
         println!("{:>12} {}", style(source).red().bold(), args);
     }
 }
+
+#[macro_export]
+macro_rules! log_info {
+    ($target:expr, $($t:tt)*) => (
+        $crate::log::impls::log_info($target, &format_args!($($t)*))
+    )
+}
+
+pub use log_info;
 
 #[macro_export]
 macro_rules! log_success {
