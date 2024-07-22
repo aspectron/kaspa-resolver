@@ -6,11 +6,13 @@ pub use kaspa_wrpc_client::KaspaRpcClient;
 // reduce fd_limit by this amount to ensure the
 // system has enough file descriptors for other
 // tasks (peers, db, etc)
-// default kHOST setup is:
+// while default kHOST setup is:
 // outgoing peers: 256
 // incoming peers: 32
+// peers are included the reported 
+// node connection count
 // reserved for db etc.: 1024
-const FD_MARGIN: u64 = 1024 + 256 + 32;
+const FD_MARGIN: u64 = 1024;
 
 #[derive(Debug)]
 pub struct Client {
@@ -52,6 +54,7 @@ impl rpc::ClientT for Client {
 
     async fn get_caps(&self) -> Result<Caps> {
         let GetSystemInfoResponse {
+            version,
             system_id,
             git_hash,
             cpu_physical_cores,
@@ -75,8 +78,8 @@ impl rpc::ClientT for Client {
         // let system_id_hex_string = format!("{:016x}", system_id);
         let git_hash = git_hash.as_ref().map(ToHex::to_hex);
         Ok(Caps {
+            version,
             system_id,
-            // system_id_hex_string,
             git_hash,
             total_memory,
             cpu_physical_cores,

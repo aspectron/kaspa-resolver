@@ -42,3 +42,4 @@ macro_rules! log_error {
 }
 
 pub use log_error;
+

@@ -10,7 +10,7 @@ impl fmt::Display for Connection {
             "[{:016x}:{:016x}] [{:>4}] {}",
             self.system_id(),
             self.node.uid(),
-            self.clients(),
+            self.sockets(),
             self.node.address
         )
     }
@@ -20,7 +20,7 @@ impl fmt::Display for Connection {
 pub struct Connection {
     caps: Arc<OnceLock<Caps>>,
     is_synced: AtomicBool,
-    clients: AtomicU64,
+    sockets: AtomicU64,
     node: Arc<NodeConfig>,
     monitor: Arc<Monitor>,
     params: PathParams,
@@ -65,7 +65,7 @@ impl Connection {
             delegate: ArcSwap::new(Arc::new(None)),
             is_connected: AtomicBool::new(false),
             is_synced: AtomicBool::new(false),
-            clients: AtomicU64::new(0),
+            sockets: AtomicU64::new(0),
             is_online: AtomicBool::new(false),
             args: args.clone(),
         })
@@ -78,7 +78,7 @@ impl Connection {
 
     #[inline]
     pub fn score(&self) -> u64 {
-        self.clients.load(Ordering::Relaxed)
+        self.sockets.load(Ordering::Relaxed)
     }
 
     #[inline]
@@ -88,7 +88,7 @@ impl Connection {
             && self
                 .caps
                 .get()
-                .is_some_and(|caps| caps.socket_capacity > self.clients())
+                .is_some_and(|caps| caps.socket_capacity > self.sockets())
     }
 
     #[inline]
@@ -107,8 +107,8 @@ impl Connection {
     }
 
     #[inline]
-    pub fn clients(&self) -> u64 {
-        self.clients.load(Ordering::Relaxed)
+    pub fn sockets(&self) -> u64 {
+        self.sockets.load(Ordering::Relaxed)
     }
 
     #[inline]
@@ -310,13 +310,13 @@ impl Connection {
                     match self.client.get_active_connections().await {
                         Ok(connections) => {
                             if self.verbose() {
-                                let previous = self.clients.load(Ordering::Relaxed);
+                                let previous = self.sockets.load(Ordering::Relaxed);
                                 if connections != previous {
-                                    self.clients.store(connections, Ordering::Relaxed);
+                                    self.sockets.store(connections, Ordering::Relaxed);
                                     log_success!("Clients", "{self}");
                                 }
                             } else {
-                                self.clients.store(connections, Ordering::Relaxed);
+                                self.sockets.store(connections, Ordering::Relaxed);
                             }
 
                             Ok(())
@@ -366,6 +366,7 @@ impl<'a> From<&'a Arc<Connection>> for Output<'a> {
 
 #[derive(Serialize)]
 pub struct Status<'a> {
+    pub version: String,
     #[serde(with = "SerHex::<Strict>")]
     pub sid: u64,
     #[serde(with = "SerHex::<Strict>")]
@@ -377,7 +378,7 @@ pub struct Status<'a> {
     pub network: &'a NetworkId,
     pub cores: u64,
     pub status: &'static str,
-    pub clients: u64,
+    pub connections: u64,
     pub capacity: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub delegates: Option<Vec<String>>,
@@ -395,18 +396,19 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
         let encryption = node.params().tls();
         let network = &node.network;
         let status = connection.status();
-        let clients = delegate.clients();
-        let (sid, capacity, cores) = delegate
+        let connections = delegate.sockets();
+        let (version, sid, capacity, cores) = delegate
             .caps()
             .get()
             .map(|caps| {
                 (
+                    caps.version.clone(),
                     caps.system_id,
                     caps.socket_capacity,
                     caps.cpu_physical_cores,
                 )
             })
-            .unwrap_or((0, 0, 0));
+            .unwrap_or_else(||("n/a".to_string(), 0, 0, 0));
 
         let delegates = connection
             .resolve_delegates()
@@ -418,6 +420,7 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
         Self {
             sid,
             uid,
+            version,
             url,
             protocol,
             encoding,
@@ -425,7 +428,7 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
             network,
             cores,
             status,
-            clients,
+            connections,
             capacity,
             delegates,
         }

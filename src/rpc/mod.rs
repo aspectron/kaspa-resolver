@@ -8,6 +8,8 @@ const SOCKETS_PER_CORE: u64 = 1024;
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Caps {
+    // node version
+    pub version: String,
     // node system id
     pub system_id: u64,
     // git hash
