@@ -1,5 +1,5 @@
 pub use crate::args::Args;
-pub use crate::connection::{Connection, Status};
+pub use crate::connection::{Connection, Output, Status};
 pub use crate::error::Error;
 pub use crate::group::*;
 pub use crate::log::*;

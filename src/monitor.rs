@@ -216,7 +216,7 @@ impl Monitor {
 
         if !connections.is_empty() {
             let node = select_with_weighted_rng(connections);
-            serde_json::to_string(&Status::from(node)).ok()
+            serde_json::to_string(&Output::from(node)).ok()
         } else {
             None
         }
