@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Status</title>
+    <style>
+        body {
+            margin: 0px;
+            padding: 32px;
+            font-size: 16px;
+            font-family: "Menlo", "Consolas", "Andale Mono", monospace;
+        }
+        .hidden {
+            display: none;
+        }
+        input {
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: "Menlo", "Consolas", "Andale Mono", monospace;
+            text-align: center;
+            background-color: transparent;
+        }
+        input::placeholder {
+            font-size: 16px;
+            font-family: "Menlo", "Consolas", "Andale Mono", monospace;
+        }
+        .menu {
+            break-after: always;
+            margin-bottom: 16px;
+        }
+    </style>
+    {% if access %}
+        <style>
+            {% include "index.css" %}
+        </style>
+        <script>
+            const access = {{ access }};
+        </script>
+        <script>{% include "index.js" %}</script>
+    {% endif %}
+</head>
+<body>
+    {% if !access %}
+        <center>
+            <form action="/status" method="post">
+                <input type="password" id="passphrase" name="passphrase" placeholder="***"><br>
+                <input type="submit" value="Login" class="hidden">
+            </form>
+        </center>
+    {% else %}
+        <div class="menu">
+            <table>
+                <tr>
+                    <td><input type="checkbox" id="offline" checked> <label for="offline">Offline</label></td>
+                    <td><input type="checkbox" id="delegators" checked> <label for="delegators">Delegators</label></td>
+                    <td>|</td>
+                    <td><a href="/status/logout">Logout</a></td>
+                </tr>
+            </table>
+        </div>
+    {% endif %}
+</body>
+</html>

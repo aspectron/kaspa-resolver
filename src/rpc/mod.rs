@@ -47,6 +47,10 @@ pub trait ClientT: std::fmt::Debug + Sized + Send + Sync + 'static {
         unimplemented!()
     }
 
+    async fn disconnect(&self) -> Result<()> {
+        unimplemented!()
+    }
+
     async fn ping(&self) -> Result<()> {
         unimplemented!()
     }
@@ -62,8 +66,8 @@ pub trait ClientT: std::fmt::Debug + Sized + Send + Sync + 'static {
     async fn get_active_connections(&self) -> Result<u64> {
         unimplemented!()
     }
+
+    fn trigger_abort(&self) -> Result<()> {
+        unimplemented!()
+    }
 }
-
-// impl ClientT for Client {
-
-// }

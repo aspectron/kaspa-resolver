@@ -130,6 +130,10 @@ fn key_file() -> String {
     ".key".to_string()
 }
 
+fn key64_file() -> String {
+    ".key64".to_string()
+}
+
 fn global_config_file() -> String {
     format!("resolver.{VERSION}.bin")
 }
@@ -138,12 +142,22 @@ fn local_config_file() -> String {
     format!("resolver.{VERSION}.toml")
 }
 
-fn load_key() -> Result<Secret> {
+pub fn load_key() -> Result<Secret> {
     let key_path = global_config_folder().join(key_file());
     if !key_path.exists() {
         return Err(Error::KeyNotFound);
     }
     Ok(Secret::from(fs::read(key_path)?))
+}
+
+pub fn load_key64() -> Result<u64> {
+    let key64_path = global_config_folder().join(key64_file());
+    if !key64_path.exists() {
+        return Err(Error::KeyNotFound);
+    }
+    Ok(u64::from_be_bytes(
+        fs::read(key64_path)?.try_into().unwrap(),
+    ))
 }
 
 pub fn locate_local_config() -> Option<PathBuf> {
@@ -225,7 +239,8 @@ pub async fn update_global_config() -> Result<Option<Vec<Arc<NodeConfig>>>> {
 
 pub fn generate_key() -> Result<()> {
     let key_path = global_config_folder().join(key_file());
-    if key_path.exists() {
+    let key64_path = global_config_folder().join(key64_file());
+    if key_path.exists() && key64_path.exists() {
         if let Ok(key) = fs::read(&key_path) {
             if key.len() != 32 {
                 log::error("Detected a key file with invalid length... overwriting...")?;
@@ -250,7 +265,9 @@ pub fn generate_key() -> Result<()> {
                 }
                 let key = argon2_sha256(password1.as_bytes(), 32)?;
                 let prefix = u16::from_be_bytes(key.as_bytes()[0..2].try_into().unwrap());
+                let key64 = xxh3_64(password1.as_bytes()).to_be_bytes();
                 fs::write(key_path, key.as_bytes())?;
+                fs::write(key64_path, key64)?;
 
                 cliclack::outro(format!("Key `{prefix:04x}` generated successfully"))?;
                 println!();
@@ -331,11 +348,15 @@ pub struct Settings {
     updates: Updates,
     limits: Limits,
     sync: SyncSettings,
+    ttl: TtlSettings,
+    http: HttpSettings,
 }
 
 impl Settings {
     pub fn load() {
         let _ = Settings::get();
+        // validate ttl settings
+        TtlSettings::ttl();
     }
 
     pub fn get() -> &'static Self {
@@ -350,6 +371,7 @@ impl Settings {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Updates {
     pub url: String,
+    #[serde(rename = "duration-hrs")]
     pub duration: f64,
 }
 
@@ -376,16 +398,74 @@ impl Limits {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct SyncSettings {
-    pub poll: u64,
-    pub ping: u64,
+    pub poll_sec: f64,
+    pub ping_sec: f64,
 }
 
 impl SyncSettings {
     pub fn poll() -> Duration {
-        Duration::from_millis(Settings::get().sync.poll)
+        Duration::from_secs_f64(Settings::get().sync.poll_sec)
     }
     pub fn ping() -> Duration {
-        Duration::from_millis(Settings::get().sync.poll)
+        Duration::from_secs_f64(Settings::get().sync.ping_sec)
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct TtlSettings {
+    pub enable: bool,
+    pub period_hrs: Option<f64>,
+    pub period_sec: Option<f64>,
+    pub noise: f64,
+}
+
+impl TtlSettings {
+    pub fn enable() -> bool {
+        Settings::get().ttl.enable
+    }
+    pub fn ttl() -> Duration {
+        let ttl = &Settings::get().ttl;
+        let period_msec = ttl
+            .period_sec
+            .map(|sec| sec * 1000.0)
+            .or_else(|| ttl.period_hrs.map(|hrs| hrs * 3600.0 * 1000.0))
+            .expect("TTL period not set");
+        let noise = Settings::get().ttl.noise;
+        let range = (period_msec * noise) as i64;
+        let mut rng = rand::thread_rng();
+        let range = rng.gen_range(-range..=range);
+        let period_msec = period_msec as i64 + range;
+        Duration::from_millis(period_msec as u64)
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct HttpSettings {
+    pub status: HttpStatus,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct HttpStatus {
+    pub sessions: Option<usize>,
+    pub ttl_hrs: Option<f64>,
+}
+
+impl HttpStatus {
+    pub fn sessions() -> usize {
+        Settings::get().http.status.sessions.unwrap_or(128)
+    }
+    pub fn ttl() -> Duration {
+        let ttl_sec = Settings::get()
+            .http
+            .status
+            .ttl_hrs
+            .map(|hrs| hrs * 3600.0)
+            .unwrap_or(48.0 * 3600.0);
+        Duration::from_secs_f64(ttl_sec)
     }
 }

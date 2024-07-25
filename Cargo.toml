@@ -1,7 +1,7 @@
 [package]
 name = "kaspa-resolver"
 description = "Kaspa wRPC endpoint resolver and monitor"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 # authors.workspace = true
 # include.workspace = true
@@ -46,6 +46,7 @@ sparkle-rpc-client = { git = "https://github.com/aspectron/sparkle.git", branch 
 
 ahash = "0.8.6"
 arc-swap = "1.7.1"
+askama = "0.12.1"
 async-trait = "0.1.51"
 axum = "0.7.4"
 borsh = "1.5.1"
@@ -71,6 +72,7 @@ toml = "0.8.8"
 tower = { version = "0.4.13", features = ["buffer","limit"] }
 tower-http = { version = "0.5.1", features = ["cors"] }
 tracing-subscriber = "0.3.18"
+uuid = "1"
 xxhash-rust = { version = "0.8.7", features = ["xxh3"] }
 
 # argon2 = "0.5.2"

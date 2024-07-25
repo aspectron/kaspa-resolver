@@ -16,6 +16,8 @@ mod resolver;
 mod result;
 mod rpc;
 mod services;
+mod session;
+mod status;
 mod tpl;
 mod transport;
 mod utils;

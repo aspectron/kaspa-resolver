@@ -48,6 +48,10 @@ impl rpc::ClientT for Client {
         Ok(())
     }
 
+    async fn disconnect(&self) -> Result<()> {
+        Ok(self.client.disconnect().await?)
+    }
+
     async fn ping(&self) -> Result<()> {
         Ok(self.client.ping().await?)
     }
@@ -96,5 +100,9 @@ impl rpc::ClientT for Client {
         let sockets = self.client.get_connections().await?;
 
         Ok(sockets as u64)
+    }
+
+    fn trigger_abort(&self) -> Result<()> {
+        Ok(self.client.trigger_abort()?)
     }
 }

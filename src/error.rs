@@ -64,6 +64,12 @@ pub enum Error {
 
     #[error("Passwords do not match")]
     PasswordsDoNotMatch,
+
+    #[error("{1}")]
+    Http(axum::http::StatusCode, &'static str),
+
+    #[error("Unauthorized")]
+    Unauthorized,
 }
 
 impl Error {

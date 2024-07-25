@@ -23,8 +23,8 @@ pub struct Args {
     pub trace: bool,
     // Show node data on each election
     // pub election: bool,
-    /// Enable resolver status access via `/status`
-    pub status: bool,
+    // Enable resolver status access via `/status`
+    // pub status: bool,
     /// Action to execute
     pub action: Action,
 }
@@ -42,7 +42,7 @@ impl Args {
             .arg(arg!(--verbose "Enable verbose logging"))
             .arg(arg!(--trace "Enable trace log level"))
             // .arg(arg!(--election "Show node data on each election"))
-            .arg(arg!(--status "Enable `/status` endpoint"))
+            // .arg(arg!(--status "Enable `/status` endpoint"))
             .arg(
                 Arg::new("rate-limit")
                     .long("rate-limit")
@@ -72,7 +72,7 @@ impl Args {
         let trace = matches.get_one::<bool>("trace").cloned().unwrap_or(false);
         let verbose = matches.get_one::<bool>("verbose").cloned().unwrap_or(false);
         // let election = matches.get_one::<bool>("election").cloned().unwrap_or(false);
-        let status = matches.get_one::<bool>("status").cloned().unwrap_or(false);
+        // let status = matches.get_one::<bool>("status").cloned().unwrap_or(false);
 
         let rate_limit = matches.get_one::<RateLimit>("rate-limit").cloned();
         let listen = matches
@@ -101,7 +101,7 @@ impl Args {
             trace,
             verbose,
             // election,
-            status,
+            // status,
             listen,
             rate_limit,
             action,

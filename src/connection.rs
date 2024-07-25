@@ -18,7 +18,9 @@ impl fmt::Display for Connection {
 
 #[derive(Debug)]
 pub struct Connection {
-    caps: Arc<OnceLock<Caps>>,
+    args: Arc<Args>,
+    // caps: Arc<RwLock<Option<Caps>>>,
+    caps: ArcSwapOption<Caps>,
     is_synced: AtomicBool,
     sockets: AtomicU64,
     node: Arc<NodeConfig>,
@@ -29,7 +31,6 @@ pub struct Connection {
     delegate: ArcSwap<Option<Arc<Connection>>>,
     is_connected: AtomicBool,
     is_online: AtomicBool,
-    args: Arc<Args>,
 }
 
 impl Connection {
@@ -56,7 +57,8 @@ impl Connection {
         let client = rpc::Client::from(client);
 
         Ok(Self {
-            caps: Arc::new(OnceLock::new()),
+            args: args.clone(),
+            caps: ArcSwapOption::new(None),
             monitor,
             params,
             node,
@@ -67,7 +69,6 @@ impl Connection {
             is_synced: AtomicBool::new(false),
             sockets: AtomicU64::new(0),
             is_online: AtomicBool::new(false),
-            args: args.clone(),
         })
     }
 
@@ -87,7 +88,9 @@ impl Connection {
             && self.online()
             && self
                 .caps
-                .get()
+                .load()
+                .as_ref()
+                .as_ref()
                 .is_some_and(|caps| caps.socket_capacity > self.sockets())
     }
 
@@ -112,14 +115,15 @@ impl Connection {
     }
 
     #[inline]
-    pub fn caps(&self) -> Arc<OnceLock<Caps>> {
-        self.caps.clone()
+    pub fn caps(&self) -> Option<Arc<Caps>> {
+        self.caps.load().clone()
     }
 
     #[inline]
     pub fn system_id(&self) -> u64 {
-        self.caps()
-            .get()
+        self.caps
+            .load()
+            .as_ref()
             .map(|caps| caps.system_id)
             .unwrap_or_default()
     }
@@ -192,16 +196,43 @@ impl Connection {
         let shutdown_ctl_receiver = self.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
 
+        // let mut ttl = sleep(TtlSettings::period());
+        let mut ttl = TtlSettings::ttl();
         // TODO - delegate state changes inside `update_state()`!
-        let mut interval = if self.is_delegate() {
-            workflow_core::task::interval(SyncSettings::poll())
+        let mut poll = if self.is_delegate() {
+            // workflow_core::task::
+            interval(SyncSettings::poll())
         } else {
-            workflow_core::task::interval(SyncSettings::ping())
+            // workflow_core::task::
+            interval(SyncSettings::ping())
         };
 
+        let mut last_connect_time: Option<Instant> = None;
+
+        // use futures::StreamExt;
         loop {
             select! {
-                _ = interval.next().fuse() => {
+
+                _ = poll.next().fuse() => {
+
+                    if TtlSettings::enable() {
+                        if let Some(t) = last_connect_time {
+                            if t.elapsed() > ttl {
+                                // println!("-- t.elapsed(): {}", t.elapsed().as_millis());
+                                last_connect_time = None;
+                                // TODO reset caps ON ALL DELEGATES?
+                                self.caps.store(None);
+                                if self.is_connected.load(Ordering::Relaxed) {
+                                    // log_info!("TTL","ttl disconnecting {}", self.node.address);
+                                    self.client.disconnect().await.ok();
+                                    // log_info!("TTL","Connecting {}", self.node.address);
+                                    self.client.connect().await.ok();
+                                }
+                                continue;
+                            }
+                        }
+                    }
+
                     if self.is_connected.load(Ordering::Relaxed) {
                         let previous = self.is_online.load(Ordering::Relaxed);
                         let online = self.update_state().await.is_ok();
@@ -222,7 +253,13 @@ impl Connection {
                             // handle wRPC channel connection and disconnection events
                             match msg {
                                 Ctl::Connect => {
-                                    log_success!("Connected","{}",self.node.address);
+                                    last_connect_time = Some(Instant::now());
+                                    ttl = TtlSettings::ttl();
+                                    if self.args.verbose {
+                                        log_info!("Connected","{} - ttl: {:1.2}",self.node.address,ttl.as_secs() as f64 / 60.0 / 60.0);
+                                    } else {
+                                        log_success!("Connected","{}",self.node.address);
+                                    }
                                     self.is_connected.store(true, Ordering::Relaxed);
                                     if self.update_state().await.is_ok() {
                                         self.is_online.store(true, Ordering::Relaxed);
@@ -234,6 +271,7 @@ impl Connection {
                                 Ctl::Disconnect => {
                                     self.is_connected.store(false, Ordering::Relaxed);
                                     self.is_online.store(false, Ordering::Relaxed);
+                                    last_connect_time = None;
                                     self.update();
                                     log_error!("Disconnected","{}",self.node.address);
                                 }
@@ -285,14 +323,11 @@ impl Connection {
             return Ok(());
         }
 
-        if self.caps().get().is_none() {
+        if self.caps().is_none() {
             let caps = self.client.get_caps().await?;
             let delegate_key = Delegate::new(caps.system_id(), self.network_id());
-            if let Err(err) = self.caps().set(caps) {
-                log_error!("CAPS", "Error setting caps: {:?}", err);
-            }
+            self.caps.store(Some(Arc::new(caps)));
             let mut delegates = self.monitor.delegates().write().unwrap();
-
             if let Some(delegate) = delegates.get(&delegate_key) {
                 self.bind_delegate(Some(delegate.clone()));
             } else {
@@ -372,6 +407,9 @@ pub struct Status<'a> {
     #[serde(with = "SerHex::<Strict>")]
     pub uid: u64,
     pub url: &'a str,
+    pub fqdn: &'a str,
+    pub service: String,
+    // pub service: &'a str,
     pub protocol: ProtocolKind,
     pub encoding: EncodingKind,
     pub encryption: TlsKind,
@@ -391,6 +429,8 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
         let node = connection.node();
         let uid = node.uid();
         let url = node.address.as_str();
+        let fqdn = node.fqdn.as_str();
+        let service = node.service().to_string();
         let protocol = node.params().protocol();
         let encoding = node.params().encoding();
         let encryption = node.params().tls();
@@ -399,7 +439,8 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
         let connections = delegate.sockets();
         let (version, sid, capacity, cores) = delegate
             .caps()
-            .get()
+            .as_ref()
+            .as_ref()
             .map(|caps| {
                 (
                     caps.version.clone(),
@@ -421,6 +462,8 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
             sid,
             uid,
             version,
+            fqdn,
+            service,
             url,
             protocol,
             encoding,

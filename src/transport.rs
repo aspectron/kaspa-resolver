@@ -73,16 +73,6 @@ impl Display for EncodingKind {
     }
 }
 
-// impl EncodingKind {
-//     pub fn wrpc_encoding(&self) -> Option<WrpcEncoding> {
-//         match self {
-//             EncodingKind::Borsh => Some(WrpcEncoding::Borsh),
-//             EncodingKind::Json => Some(WrpcEncoding::SerdeJson),
-//             EncodingKind::Protobuf => None,
-//         }
-//     }
-// }
-
 #[derive(
     Debug, Describe, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
 )]

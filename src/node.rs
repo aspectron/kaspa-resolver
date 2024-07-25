@@ -89,6 +89,11 @@ impl NodeConfig {
         self.service
     }
 
+    // #[inline]
+    // pub fn network(&self) -> NetworkId {
+    //     self.network
+    // }
+
     #[inline]
     pub fn uid(&self) -> u64 {
         self.uid

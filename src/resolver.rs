@@ -3,13 +3,13 @@ use crate::imports::*;
 use axum::{
     // extract::Query,
     body::Body,
-    http::{header, HeaderValue, StatusCode},
+    extract::Form,
+    http::{header, HeaderValue, Request, StatusCode},
     response::{IntoResponse, Response},
-    routing::get,
+    routing::{get, post},
     Router,
 };
 use tokio::net::TcpListener;
-
 use axum::{error_handling::HandleErrorLayer, BoxError};
 use std::time::Duration;
 use tower::{buffer::BufferLayer, limit::RateLimitLayer, ServiceBuilder};
@@ -22,6 +22,7 @@ struct Inner {
     sparkle: Arc<Monitor>,
     shutdown_ctl: DuplexChannel<()>,
     events: Channel<Events>,
+    sessions: Sessions,
 }
 
 impl Inner {
@@ -33,6 +34,7 @@ impl Inner {
             sparkle: Arc::new(Monitor::new(args, Service::Sparkle)),
             shutdown_ctl: DuplexChannel::oneshot(),
             events: Channel::unbounded(),
+            sessions: Sessions::new(HttpStatus::sessions(), HttpStatus::ttl()),
         }
     }
 }
@@ -54,58 +56,56 @@ impl Resolver {
     }
 
     pub async fn init_http_server(self: &Arc<Self>) -> Result<()> {
-        let router = Router::new();
+        let mut router = Router::new();
 
         let this = self.clone();
-        let router = router.route(
+        router = router.route(
             "/v2/kaspa/:network/:tls/:protocol/:encoding",
             get(|path| async move { this.get_elected_kaspa(path).await }),
-            // get(|query, path| async move { this.get_elected_kaspa(query, path).await }),
         );
 
         let this = self.clone();
-        let router = router.route(
+        router = router.route(
             "/v2/sparkle/:network/:tls/:protocol/:encoding",
             get(|path| async move { this.get_elected_sparkle(path).await }),
-            // get(|query, path| async move { this.get_elected_sparkle(query, path).await }),
         );
 
-        let router = if self.args().status {
-            log_warn!("Routes", "Enabling `/status` route");
-            let this1 = self.clone();
-            let this2 = self.clone();
-            let this3 = self.clone();
-            let this4 = self.clone();
-            router
-                .route(
-                    "/status",
-                    get(|| async move { this1.get_status_all_nodes(true).await }),
-                )
-                .route(
-                    "/delegates",
-                    get(|| async move { this2.get_status_all_nodes(false).await }),
-                )
-                .route(
-                    "/status/kaspa",
-                    get(|| async move { this3.get_status(&this3.inner.kaspa, false).await }),
-                )
-                .route(
-                    "/status/sparkle",
-                    get(|| async move { this4.get_status(&this4.inner.sparkle, false).await }),
-                )
-        } else {
-            log_success!("Routes", "Disabling status routes");
-            router
-        };
+        let this = self.clone();
+        router = router.route(
+            "/status/logout",
+            get(|req: Request<Body>| async move { status::logout_handler(&this, req).await }),
+        );
 
-        let router = if let Some(rate_limit) = self.args().rate_limit.as_ref() {
+        let this = self.clone();
+        router = router.route(
+            "/status",
+            post(|form: Form<HashMap<String, String>>| async move {
+                status::status_handler(&this, status::RequestKind::Post(form)).await
+            }),
+        );
+
+        let this = self.clone();
+        router = router.route(
+            "/status",
+            get(|req: Request<Body>| async move {
+                status::status_handler(&this, status::RequestKind::AsHtml(req)).await
+            }),
+        );
+
+        let this = self.clone();
+        router = router.route(
+            "/status/json",
+            get(|req: Request<Body>| async move { status::json_handler(&this, req).await }),
+        );
+
+        if let Some(rate_limit) = self.args().rate_limit.as_ref() {
             log_success!(
                 "Limits",
                 "Setting rate limit to: {} requests per {} seconds",
                 rate_limit.requests,
                 rate_limit.period
             );
-            router.layer(
+            router = router.layer(
                 ServiceBuilder::new()
                     .layer(HandleErrorLayer::new(|err: BoxError| async move {
                         (
@@ -118,13 +118,12 @@ impl Resolver {
                         rate_limit.requests,
                         Duration::from_secs(rate_limit.period),
                     )),
-            )
+            );
         } else {
             log_warn!("Limits", "Rate limit is disabled");
-            router
         };
 
-        let router = router.layer(CorsLayer::new().allow_origin(Any));
+        router = router.layer(CorsLayer::new().allow_origin(Any));
 
         log_success!(
             "Server",
@@ -184,6 +183,7 @@ impl Resolver {
         let shutdown_ctl_receiver = self.inner.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.inner.shutdown_ctl.response.sender.clone();
 
+        let mut sessions = workflow_core::task::interval(Duration::from_secs(3600));
         let mut update = workflow_core::task::interval(Updates::duration());
 
         loop {
@@ -211,6 +211,10 @@ impl Resolver {
                         }
 
                     }
+                }
+
+                _ = sessions.next().fuse() => {
+                    self.inner.sessions.cleanup();
                 }
 
                 _ = update.next().fuse() => {
@@ -262,25 +266,40 @@ impl Resolver {
     }
 
     // respond with a JSON object containing the status of all nodes
-    async fn get_status_all_nodes(&self, delegates: bool) -> impl IntoResponse {
-        let kaspa = self.inner.kaspa.get_all(delegates);
+    #[allow(dead_code)]
+    fn get_status<F>(&self, monitor: Option<&Monitor>, filter: F) -> impl IntoResponse
+    where
+        F: Fn(&&Arc<Connection>) -> bool,
+    {
+        if let Some(monitor) = monitor {
+            let connections = monitor.to_vec();
+            let status = connections
+                .iter()
+                .filter(filter)
+                .map(Status::from)
+                .collect::<Vec<_>>();
 
-        let sparkle = self.inner.sparkle.get_all(delegates);
-
-        let status = kaspa
-            .iter()
-            .map(Status::from)
-            .chain(sparkle.iter().map(Status::from))
-            .collect::<Vec<_>>();
-
-        with_json(status)
+            with_json(status)
+        } else {
+            let kaspa = self.inner.kaspa.to_vec();
+            let sparkle = self.inner.sparkle.to_vec();
+            let status = kaspa
+                .iter()
+                .chain(sparkle.iter())
+                .filter(filter)
+                .map(Status::from)
+                .collect::<Vec<_>>();
+            with_json(status)
+        };
     }
 
-    async fn get_status(&self, monitor: &Monitor, delegates: bool) -> impl IntoResponse {
-        let connections = monitor.get_all(delegates);
-        let status = connections.iter().map(Status::from).collect::<Vec<_>>();
+    // // respond with a JSON object containing the status of all nodes
+    pub fn connections(&self) -> Vec<Arc<Connection>> {
+        let kaspa = self.inner.kaspa.to_vec();
 
-        with_json(status)
+        let sparkle = self.inner.sparkle.to_vec();
+
+        kaspa.into_iter().chain(sparkle).collect::<Vec<_>>()
     }
 
     // respond with a JSON object containing the elected node
@@ -314,6 +333,10 @@ impl Resolver {
             not_found()
         }
     }
+
+    pub fn sessions(&self) -> &Sessions {
+        &self.inner.sessions
+    }
 }
 
 #[inline]
@@ -324,6 +347,12 @@ fn with_json_string(json: String) -> Response<Body> {
             (
                 header::CONTENT_TYPE,
                 HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
+            ),
+            (
+                header::CACHE_CONTROL,
+                HeaderValue::from_static(
+                    "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0",
+                ),
             ),
             (header::CONNECTION, HeaderValue::from_static("close")),
         ],
@@ -343,6 +372,12 @@ where
             (
                 header::CONTENT_TYPE,
                 HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
+            ),
+            (
+                header::CACHE_CONTROL,
+                HeaderValue::from_static(
+                    "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0",
+                ),
             ),
             (header::CONNECTION, HeaderValue::from_static("close")),
         ],
@@ -373,6 +408,12 @@ fn not_found() -> Response<Body> {
             (
                 header::CONTENT_TYPE,
                 HeaderValue::from_static(mime::TEXT_PLAIN_UTF_8.as_ref()),
+            ),
+            (
+                header::CACHE_CONTROL,
+                HeaderValue::from_static(
+                    "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0",
+                ),
             ),
             (header::CONNECTION, HeaderValue::from_static("close")),
         ],

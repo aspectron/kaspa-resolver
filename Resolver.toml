@@ -1,11 +1,20 @@
+[http.status]
+sessions = 128
+ttl-hrs = 48
+
 [limits]
 fd = 8192
 
 [sync]
-poll = 1000
-ping = 3500
+poll-sec = 1.0
+ping-sec = 3.5
+
+[ttl]
+enable = true
+period-hrs = 24
+noise = 0.3
 
 [updates]
 url = "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/data/"
-duration = 12.0 # hours
+duration-hrs = 12.0
 

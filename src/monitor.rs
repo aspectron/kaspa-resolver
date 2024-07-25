@@ -51,6 +51,16 @@ impl Monitor {
         self.connections.read().unwrap().clone()
     }
 
+    pub fn to_vec(&self) -> Vec<Arc<Connection>> {
+        self.connections
+            .read()
+            .unwrap()
+            .values()
+            .flatten()
+            .cloned()
+            .collect()
+    }
+
     /// Process an update to `Server.toml` removing or adding node connections accordingly.
     pub async fn update_nodes(
         self: &Arc<Self>,
@@ -179,22 +189,6 @@ impl Monitor {
         shutdown_ctl_sender.send(()).await.unwrap();
 
         Ok(())
-    }
-
-    // /// Get the status of all nodes as a JSON string (available via `/status` endpoint if enabled).
-    pub fn get_all(&self, delegates: bool) -> Vec<Arc<Connection>> {
-        let connections = self.connections();
-        let nodes = if delegates {
-            connections
-                .values()
-                .flatten()
-                .filter(|connection| connection.is_delegate())
-                .cloned()
-                .collect::<Vec<_>>()
-        } else {
-            connections.values().flatten().cloned().collect::<Vec<_>>()
-        };
-        nodes
     }
 
     pub fn schedule_sort(&self, params: &PathParams) {
