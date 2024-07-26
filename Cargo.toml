@@ -21,12 +21,12 @@ path = "src/main.rs"
 # workflow-rpc = { path = "../workflow-rs/rpc" }
 # workflow-encryption = { path = "../workflow-rs/encryption" }
 
-workflow-core = "0.14.0"
-workflow-http = "0.14.0"
-workflow-log = "0.14.0"
-workflow-serializer = "0.14.0"
-workflow-rpc = "0.14.0"
-workflow-encryption = "0.14.0"
+workflow-core = "0.15.0"
+workflow-http = "0.15.0"
+workflow-log = "0.15.0"
+workflow-serializer = "0.15.0"
+workflow-rpc = "0.15.0"
+workflow-encryption = "0.15.0"
 
 # kaspa-consensus-core = { path = "../rusty-kaspa/consensus/core" }
 # kaspa-rpc-core = { path = "../rusty-kaspa/rpc/core" }

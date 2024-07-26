@@ -225,10 +225,10 @@ pub async fn update_global_config() -> Result<Option<Vec<Arc<NodeConfig>>>> {
 
     let hash = sha256(data.as_slice());
     let mut previous = HASH.lock().unwrap();
-    if previous.as_deref() == Some(hash.as_bytes()) {
+    if previous.as_deref() == Some(hash.as_slice()) {
         Ok(None)
     } else {
-        *previous = Some(hash.as_bytes().to_vec());
+        *previous = Some(hash.as_slice().to_vec());
         let key = load_key()?;
         let toml = chacha20poly1305::decrypt_slice(&data, &key)?;
         let config = Config::try_parse(toml.as_str()?)?;
@@ -264,9 +264,9 @@ pub fn generate_key() -> Result<()> {
                     return Err(Error::PasswordsDoNotMatch);
                 }
                 let key = argon2_sha256(password1.as_bytes(), 32)?;
-                let prefix = u16::from_be_bytes(key.as_bytes()[0..2].try_into().unwrap());
+                let prefix = u16::from_be_bytes(key.as_slice()[0..2].try_into().unwrap());
                 let key64 = xxh3_64(password1.as_bytes()).to_be_bytes();
-                fs::write(key_path, key.as_bytes())?;
+                fs::write(key_path, key.as_slice())?;
                 fs::write(key64_path, key64)?;
 
                 cliclack::outro(format!("Key `{prefix:04x}` generated successfully"))?;
@@ -297,7 +297,7 @@ pub fn get_key() -> Result<Secret> {
 }
 
 fn prefix(key: &Secret) -> String {
-    let prefix = u16::from_be_bytes(key.as_bytes()[0..2].try_into().unwrap());
+    let prefix = u16::from_be_bytes(key.as_slice()[0..2].try_into().unwrap());
     format!("{prefix:04x}")
 }
 
