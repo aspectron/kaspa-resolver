@@ -226,13 +226,17 @@ pub async fn update_global_config() -> Result<Option<Vec<Arc<NodeConfig>>>> {
     let hash = sha256(data.as_slice());
     let mut previous = HASH.lock().unwrap();
     if previous.as_deref() == Some(hash.as_slice()) {
+        log_warn!("Config", "No changes detected");
         Ok(None)
     } else {
+        log_warn!("Config", "Changes detected");
         *previous = Some(hash.as_slice().to_vec());
         let key = load_key()?;
         let toml = chacha20poly1305::decrypt_slice(&data, &key)?;
         let config = Config::try_parse(toml.as_str()?)?;
-        fs::write(global_config_folder().join(global_config_file()), data)?;
+        let global_config_file = global_config_folder().join(global_config_file());
+        fs::write(&global_config_file, data)?;
+        log_info!("Config", "Updating: `{}`", global_config_file.display());
         Ok(Some(config))
     }
 }
@@ -307,6 +311,7 @@ pub fn pack() -> Result<()> {
     let local_config_folder = local_config_folder().ok_or(Error::LocalConfigNotFound)?;
     let local_config_file = local_config_folder.join(local_config_file());
     let local_data_file = local_config_folder.join(global_config_file());
+    log::info(format!(" in: {}\nout: {}", local_config_file.display(),local_data_file.display()))?;
     let toml = fs::read_to_string(local_config_file)?;
     Config::try_parse(toml.as_str())?;
     let data = chacha20poly1305::encrypt_slice(toml.as_bytes(), &key)?;
