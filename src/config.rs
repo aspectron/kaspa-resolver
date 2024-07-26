@@ -1,7 +1,7 @@
 use crate::imports::*;
 use chrono::prelude::*;
 
-const VERSION: u64 = 1;
+const VERSION: u64 = 2;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
