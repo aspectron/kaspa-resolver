@@ -53,13 +53,18 @@
             <table>
                 <tr>
                     <td><input type="checkbox" id="offline" checked> <label for="offline">Offline</label></td>
-                    <td><input type="checkbox" id="delegators" checked> <label for="delegators">Delegators</label></td>
+                    <td><input type="checkbox" id="delegators"> <label for="delegators">Delegators</label></td>
                     <td>|</td>
                     <td><a href="/status/logout">Logout</a></td>
                 </tr>
             </table>
         </div>
-        <div class="status"><table><tr><td id="status"></td></tr></table></div>
+        <div class="status">
+            <table>
+                <tr id="status">
+                </tr>
+            </table>
+        </div>
 
     {% endif %}
 </body>

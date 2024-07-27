@@ -358,15 +358,18 @@ impl Connection {
 
                 if is_synced {
                     match self.client.get_active_connections().await {
-                        Ok(Connections { clients, peers: _ }) => {
+                        Ok(Connections { clients, peers }) => {
                             if self.verbose() {
-                                let previous = self.clients.load(Ordering::Relaxed);
-                                if clients != previous {
+                                let prev_clients = self.clients.load(Ordering::Relaxed);
+                                let prev_peers = self.peers.load(Ordering::Relaxed);
+                                if clients != prev_clients || peers != prev_peers {
                                     self.clients.store(clients, Ordering::Relaxed);
+                                    self.peers.store(peers, Ordering::Relaxed);
                                     log_success!("Clients", "{self}");
                                 }
                             } else {
                                 self.clients.store(clients, Ordering::Relaxed);
+                                self.peers.store(peers, Ordering::Relaxed);
                             }
 
                             Ok(())

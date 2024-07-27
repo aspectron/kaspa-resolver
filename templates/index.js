@@ -1,10 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
+    window.nodes = [];
+    window.networks = {
+        "mainnet": true,
+        "testnet-10": true,
+        "testnet-11": true,
+    };
+
     table = document.createElement('table');
     document.body.appendChild(table);
 
     thead = document.createElement('thead');
     table.appendChild(thead);
-    thead.innerHTML = "<tr><th>SID:UID</th><th>SERVICE</th><th>VERSION</th><th>FQDN</th><th>PROTO</th><th>ENCODING</th><th>NETWORK</th><th>STATUS</th><th class='right'>PEERS</th><th class='right'>CONN/CAP</th><th class='right'>LOAD</th></tr>";
+    thead.innerHTML = "<tr><th>SID:UID</th><th>SERVICE</th><th>VERSION</th><th>FQDN</th><th>PROTO</th><th>ENCODING</th><th>NETWORK</th><th>STATUS</th><th class='right'>PEERS</th><th class='right'>CLIENTS/CAP</th><th class='right'>LOAD</th></tr>";
 
     tbody = document.createElement('tbody');
     tbody.id = "nodes";
@@ -23,9 +30,9 @@ function fetchData() {
     fetch('/status/json')
         .then(response => response.json())
         .then(data => {
-            setTimeout(fetchData, 5000);
             window.nodes = data;
             render();
+            setTimeout(fetchData, 5000);
         })
         .catch(error => {
             setTimeout(fetchData, 5000);
@@ -34,7 +41,9 @@ function fetchData() {
 }
 
 function filter(node, ctx) {
-    if (node.status == "offline" && !ctx.offline) {
+    if (!window.networks[node.network]) {
+        return "hidden";
+    } else if (node.status == "offline" && !ctx.offline) {
         return "hidden";
     } else if (node.status == "delegator" && !ctx.delegators) {
         return "hidden";
@@ -44,7 +53,7 @@ function filter(node, ctx) {
 }
 
 function render() {
-    
+
     let ctx = {
         offline : document.getElementById('offline').checked,
         delegators : document.getElementById('delegators').checked,
@@ -101,7 +110,7 @@ function render() {
         let capacity_ = capacity.toLocaleString();
         el.innerHTML = `<td>${sid}:${uid}</td><td>${service}</td><td>${version}</td><td>${fqdn}</td><td>${protocol}</td><td>${encoding}</td><td>${network}</td><td>${status}</td>`;
         if (status != "offline") {
-            el.innerHTML += `<td class='wide right'>${peers_}</td><td class='wide right'>${clients_}/${capacity_}</td><td class='wide right'>${load}%</td>`;
+            el.innerHTML += `<td class='wide right'>${peers_}</td><td class='wide right'>${clients_} / ${capacity_}</td><td class='wide right'>${load}%</td>`;
         }
     });
 
@@ -109,12 +118,33 @@ function render() {
         sort();
     }
 
-    document.getElementById('status').innerText = Object.entries(status).map(([network, status]) => {
+    let status_entries = Object.entries(status);
+    status_entries.sort(([a], [b]) => a.localeCompare(b));
+    status_entries.forEach(([network, status]) => {
+        let el = document.getElementById(`${network}-data`);
+        if (!el) {
+            let tbody = document.getElementById("status");
+            el = document.createElement('td');
+            el.id = network;
+            el.innerHTML = `<input type="checkbox" id="${network}-filter" checked> <label for="${network}-filter">${network}: <span id='${network}-data'></span></label>&nbsp;&nbsp;&nbsp;`;
+            tbody.appendChild(el);
+
+            if (window.networks[network] == undefined) {
+                window.networks[network] = true;
+            }
+
+            document.getElementById(`${network}-filter`).addEventListener('change', () => {
+                window.networks[network] = document.getElementById(`${network}-filter`).checked;
+                render();
+            });
+            el = document.getElementById(`${network}-data`);
+        }
         let load = (status.clients / status.capacity * 100.0).toFixed(2);
-        let clients = status.connections.toLocaleString();
+        let clients = status.clients.toLocaleString();
         let capacity = status.capacity.toLocaleString();
-        return `${network}: ${clients}/${capacity} ${load}%`;
-    }).join('   ');
+        el.innerHTML = `${clients} / ${capacity} &nbsp;${load}%`;
+    });
+
 }
 
 function sort() {
