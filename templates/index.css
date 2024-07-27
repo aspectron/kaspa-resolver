@@ -64,6 +64,10 @@ tr.delegator > td {
     color: rgb(22, 32, 110);
 }
 
+tr.syncing > td {
+    color: rgb(149, 116, 37);
+}
+
 th {
     text-align: left;
     font-size: 14px;
