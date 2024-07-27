@@ -1,6 +1,6 @@
-use super::Caps;
+use super::{Caps, Connections};
 use crate::imports::*;
-use kaspa_rpc_core::GetSystemInfoResponse;
+use kaspa_rpc_core::{GetConnectionsResponse, GetSystemInfoResponse};
 pub use kaspa_wrpc_client::KaspaRpcClient;
 
 // reduce fd_limit by this amount to ensure the
@@ -75,7 +75,7 @@ impl rpc::ClientT for Client {
         // 1024 connections per core (default NGINX worker configuration)
         // TODO: this should be increased in the future once a custom
         // proxy is implemented
-        let socket_capacity = fd_limit_actual.min(cpu_physical_cores * rpc::SOCKETS_PER_CORE);
+        let clients_limit = cpu_physical_cores * rpc::SOCKETS_PER_CORE;
         let system_id = system_id
             .and_then(|v| v[0..8].try_into().ok().map(u64::from_be_bytes))
             .unwrap_or_default();
@@ -87,8 +87,8 @@ impl rpc::ClientT for Client {
             git_hash,
             total_memory,
             cpu_physical_cores,
-            fd_limit,
-            socket_capacity,
+            fd_limit: fd_limit_actual,
+            clients_limit,
         })
     }
 
@@ -96,10 +96,13 @@ impl rpc::ClientT for Client {
         Ok(self.client.get_sync_status().await?)
     }
 
-    async fn get_active_connections(&self) -> Result<u64> {
-        let sockets = self.client.get_connections().await?;
+    async fn get_active_connections(&self) -> Result<Connections> {
+        let GetConnectionsResponse { clients, peers } = self.client.get_connections().await?;
 
-        Ok(sockets as u64)
+        Ok(Connections {
+            clients: clients as u64,
+            peers: peers as u64,
+        })
     }
 
     fn trigger_abort(&self) -> Result<()> {

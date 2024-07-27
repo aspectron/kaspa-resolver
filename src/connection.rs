@@ -22,7 +22,8 @@ pub struct Connection {
     // caps: Arc<RwLock<Option<Caps>>>,
     caps: ArcSwapOption<Caps>,
     is_synced: AtomicBool,
-    sockets: AtomicU64,
+    clients: AtomicU64,
+    peers: AtomicU64,
     node: Arc<NodeConfig>,
     monitor: Arc<Monitor>,
     params: PathParams,
@@ -67,7 +68,8 @@ impl Connection {
             delegate: ArcSwap::new(Arc::new(None)),
             is_connected: AtomicBool::new(false),
             is_synced: AtomicBool::new(false),
-            sockets: AtomicU64::new(0),
+            clients: AtomicU64::new(0),
+            peers: AtomicU64::new(0),
             is_online: AtomicBool::new(false),
         })
     }
@@ -79,19 +81,18 @@ impl Connection {
 
     #[inline]
     pub fn score(&self) -> u64 {
-        self.sockets.load(Ordering::Relaxed)
+        self.clients.load(Ordering::Relaxed)
     }
 
     #[inline]
     pub fn is_available(&self) -> bool {
         self.is_delegate()
             && self.online()
-            && self
-                .caps
-                .load()
-                .as_ref()
-                .as_ref()
-                .is_some_and(|caps| caps.socket_capacity > self.sockets())
+            && self.caps.load().as_ref().as_ref().is_some_and(|caps| {
+                let clients = self.clients();
+                let peers = self.peers();
+                clients < caps.clients_limit && clients + peers < caps.fd_limit
+            })
     }
 
     #[inline]
@@ -110,8 +111,18 @@ impl Connection {
     }
 
     #[inline]
+    pub fn clients(&self) -> u64 {
+        self.clients.load(Ordering::Relaxed)
+    }
+
+    #[inline]
+    pub fn peers(&self) -> u64 {
+        self.peers.load(Ordering::Relaxed)
+    }
+
+    #[inline]
     pub fn sockets(&self) -> u64 {
-        self.sockets.load(Ordering::Relaxed)
+        self.clients() + self.peers()
     }
 
     #[inline]
@@ -239,7 +250,11 @@ impl Connection {
                         self.is_online.store(online, Ordering::Relaxed);
                         if online != previous {
                             if self.verbose() {
-                                log_error!("Offline","{}", self.node.address);
+                                if online {
+                                    log_success!("Online","{}", self.node.address);
+                                } else {
+                                    log_error!("Offline","{}", self.node.address);
+                                }
                             }
                             self.update();
                         }
@@ -343,35 +358,35 @@ impl Connection {
 
                 if is_synced {
                     match self.client.get_active_connections().await {
-                        Ok(connections) => {
+                        Ok(Connections { clients, peers: _ }) => {
                             if self.verbose() {
-                                let previous = self.sockets.load(Ordering::Relaxed);
-                                if connections != previous {
-                                    self.sockets.store(connections, Ordering::Relaxed);
+                                let previous = self.clients.load(Ordering::Relaxed);
+                                if clients != previous {
+                                    self.clients.store(clients, Ordering::Relaxed);
                                     log_success!("Clients", "{self}");
                                 }
                             } else {
-                                self.sockets.store(connections, Ordering::Relaxed);
+                                self.clients.store(clients, Ordering::Relaxed);
                             }
 
                             Ok(())
                         }
                         Err(err) => {
-                            log_error!("Metrics", "{self}");
-                            log_error!("RPC", "{err}");
+                            log_error!("RPC", "{self}");
+                            log_error!("Error", "{err}");
                             Err(Error::Metrics)
                         }
                     }
                 } else {
                     if is_synced != previous_sync {
-                        log_error!("Syncing", "{self}");
+                        log_error!("Sync", "{self}");
                     }
                     Err(Error::Sync)
                 }
             }
             Err(err) => {
                 log_error!("RPC", "{self}");
-                log_error!("RPC", "{err}");
+                log_error!("Error", "{err}");
                 Err(Error::Status)
             }
         }
@@ -416,7 +431,8 @@ pub struct Status<'a> {
     pub network: &'a NetworkId,
     pub cores: u64,
     pub status: &'static str,
-    pub connections: u64,
+    pub peers: u64,
+    pub clients: u64,
     pub capacity: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub delegates: Option<Vec<String>>,
@@ -436,7 +452,8 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
         let encryption = node.params().tls();
         let network = &node.network;
         let status = connection.status();
-        let connections = delegate.sockets();
+        let clients = delegate.clients();
+        let peers = delegate.peers();
         let (version, sid, capacity, cores) = delegate
             .caps()
             .as_ref()
@@ -445,7 +462,7 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
                 (
                     caps.version.clone(),
                     caps.system_id,
-                    caps.socket_capacity,
+                    caps.clients_limit,
                     caps.cpu_physical_cores,
                 )
             })
@@ -471,7 +488,8 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
             network,
             cores,
             status,
-            connections,
+            clients,
+            peers,
             capacity,
             delegates,
         }

@@ -311,7 +311,11 @@ pub fn pack() -> Result<()> {
     let local_config_folder = local_config_folder().ok_or(Error::LocalConfigNotFound)?;
     let local_config_file = local_config_folder.join(local_config_file());
     let local_data_file = local_config_folder.join(global_config_file());
-    log::info(format!(" in: {}\nout: {}", local_config_file.display(),local_data_file.display()))?;
+    log::info(format!(
+        " in: {}\nout: {}",
+        local_config_file.display(),
+        local_data_file.display()
+    ))?;
     let toml = fs::read_to_string(local_config_file)?;
     Config::try_parse(toml.as_str())?;
     let data = chacha20poly1305::encrypt_slice(toml.as_bytes(), &key)?;

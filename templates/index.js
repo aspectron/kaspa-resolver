@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     thead = document.createElement('thead');
     table.appendChild(thead);
-    thead.innerHTML = "<tr><th>SID:UID</th><th>SERVICE</th><th>VERSION</th><th>FQDN</th><th>PROTO</th><th>ENCODING</th><th>NETWORK</th><th>STATUS</th><th class='right'>CONN/CAP</th><th class='right'>LOAD</th></tr>";
+    thead.innerHTML = "<tr><th>SID:UID</th><th>SERVICE</th><th>VERSION</th><th>FQDN</th><th>PROTO</th><th>ENCODING</th><th>NETWORK</th><th>STATUS</th><th class='right'>PEERS</th><th class='right'>CONN/CAP</th><th class='right'>LOAD</th></tr>";
 
     tbody = document.createElement('tbody');
     tbody.id = "nodes";
@@ -58,9 +58,9 @@ function render() {
         .reduce((acc, node) => {
             const network = node.network;
             if (!acc[network]) {
-                acc[network] = { connections: 0, capacity: 0 };
+                acc[network] = { clients: 0, capacity: 0 };
             }
-            acc[network].connections += node.connections;
+            acc[network].clients += node.clients;
             acc[network].capacity += node.capacity;
             return acc;
         }, {});
@@ -79,7 +79,8 @@ function render() {
             network,
             cores,
             status,
-            connections,
+            peers,
+            clients,
             capacity,
             delegates,
         } = node;
@@ -94,12 +95,13 @@ function render() {
         }
         el.className = filter(node, ctx);
 
-        let load = (connections / capacity * 100.0).toFixed(2);
-        let connections_ = connections.toLocaleString();
+        let load = (clients / capacity * 100.0).toFixed(2);
+        let peers_ = peers.toLocaleString();
+        let clients_ = clients.toLocaleString();
         let capacity_ = capacity.toLocaleString();
         el.innerHTML = `<td>${sid}:${uid}</td><td>${service}</td><td>${version}</td><td>${fqdn}</td><td>${protocol}</td><td>${encoding}</td><td>${network}</td><td>${status}</td>`;
         if (status != "offline") {
-            el.innerHTML += `<td class='wide right'>${connections_}/${capacity_}</td><td class='wide right'>${load}%</td>`;
+            el.innerHTML += `<td class='wide right'>${peers_}</td><td class='wide right'>${clients_}/${capacity_}</td><td class='wide right'>${load}%</td>`;
         }
     });
 
@@ -108,10 +110,10 @@ function render() {
     }
 
     document.getElementById('status').innerText = Object.entries(status).map(([network, status]) => {
-        let load = (status.connections / status.capacity * 100.0).toFixed(2);
-        let connections = status.connections.toLocaleString();
+        let load = (status.clients / status.capacity * 100.0).toFixed(2);
+        let clients = status.connections.toLocaleString();
         let capacity = status.capacity.toLocaleString();
-        return `${network}: ${connections}/${capacity} ${load}%`;
+        return `${network}: ${clients}/${capacity} ${load}%`;
     }).join('   ');
 }
 

@@ -18,16 +18,23 @@ pub struct Caps {
     pub total_memory: u64,
     // number of cores
     pub cpu_physical_cores: u64,
-    // number of utilized file descriptors
+    // number of available file descriptors
     pub fd_limit: u64,
-    // number of available sockets
-    pub socket_capacity: u64,
+    // number of available clients
+    pub clients_limit: u64,
 }
 
 impl Caps {
     pub fn system_id(&self) -> u64 {
         self.system_id
     }
+}
+
+#[derive(Debug)]
+pub struct Connections {
+    pub clients: u64,
+    #[allow(dead_code)]
+    pub peers: u64,
 }
 
 #[enum_dispatch]
@@ -63,7 +70,7 @@ pub trait ClientT: std::fmt::Debug + Sized + Send + Sync + 'static {
         unimplemented!()
     }
 
-    async fn get_active_connections(&self) -> Result<u64> {
+    async fn get_active_connections(&self) -> Result<Connections> {
         unimplemented!()
     }
 
