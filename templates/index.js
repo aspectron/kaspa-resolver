@@ -53,6 +53,18 @@ function render() {
     let resort = false;
     let tbody = document.getElementById("nodes");
 
+    const status = nodes
+        .filter((node) => node.status === 'online')
+        .reduce((acc, node) => {
+            const network = node.network;
+            if (!acc[network]) {
+                acc[network] = { connections: 0, capacity: 0 };
+            }
+            acc[network].connections += node.connections;
+            acc[network].capacity += node.capacity;
+            return acc;
+        }, {});
+
     window.nodes.forEach((node) => {
         let { 
             version,
@@ -83,15 +95,24 @@ function render() {
         el.className = filter(node, ctx);
 
         let load = (connections / capacity * 100.0).toFixed(2);
+        let connections_ = connections.toLocaleString();
+        let capacity_ = capacity.toLocaleString();
         el.innerHTML = `<td>${sid}:${uid}</td><td>${service}</td><td>${version}</td><td>${fqdn}</td><td>${protocol}</td><td>${encoding}</td><td>${network}</td><td>${status}</td>`;
         if (status != "offline") {
-            el.innerHTML += `<td class='wide right'>${connections}/${capacity}</td><td class='wide right'>${load}%</td>`;
+            el.innerHTML += `<td class='wide right'>${connections_}/${capacity_}</td><td class='wide right'>${load}%</td>`;
         }
     });
 
     if (resort) {
         sort();
     }
+
+    document.getElementById('status').innerText = Object.entries(status).map(([network, status]) => {
+        let load = (status.connections / status.capacity * 100.0).toFixed(2);
+        let connections = status.connections.toLocaleString();
+        let capacity = status.capacity.toLocaleString();
+        return `${network}: ${connections}/${capacity} ${load}%`;
+    }).join('   ');
 }
 
 function sort() {
