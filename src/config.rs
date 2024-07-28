@@ -104,7 +104,19 @@ pub fn init(user_config: &Option<PathBuf>) -> Result<()> {
         fs::create_dir_all(&global_config_folder)?;
     }
 
-    if let Some(user_config) = user_config {
+    let local_config_override = global_config_folder.join("local.toml");
+    if local_config_override.exists() {
+        log_warn!(
+            "Config",
+            "Using local config override: `{}`",
+            local_config_override.display()
+        );
+        let toml = fs::read_to_string(local_config_override)?;
+        USER_CONFIG
+            .lock()
+            .unwrap()
+            .replace(Config::try_parse(toml.as_str())?);
+    } else if let Some(user_config) = user_config {
         // let config_path = Path::new(config);
         if !user_config.exists() {
             Err(Error::custom(format!(

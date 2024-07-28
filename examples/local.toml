@@ -4,7 +4,10 @@
 # and edited to match the actual configuration of the cluster.
 #
 # For testing, run the resolver with the following command:
-# cargo run --release -- --trace --verbose --config-file=examples/cluster.toml --auto-update 
+# cargo run --release -- --trace --verbose --config-file=examples/local.toml --auto-update 
+#
+# To run under kHOST deployment, copy this file to `~/.kaspa-resolver/local.toml`.
+# Existence of `~/.kaspa-resolver/local.toml` will override any other configuration settings.
 #
 
 [[node]]
