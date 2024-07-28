@@ -1,0 +1,23 @@
+#
+# Example configuration for private node cluster
+# This file should be copied to ~/.kaspa-resolver/cluster.toml
+# and edited to match the actual configuration of the cluster.
+#
+# For testing, run the resolver with the following command:
+# cargo run --release -- --trace --verbose --config-file=examples/cluster.toml --auto-update 
+#
+
+[[node]]
+service = "kaspa"
+transport-type = "wrpc-borsh"
+tls = true
+network = "mainnet"
+fqdn = "example1.com"
+
+[[node]]
+service = "kaspa"
+tls = true
+transport-type = "wrpc-borsh"
+network = "testnet-11"
+fqdn = "example2.com"
+

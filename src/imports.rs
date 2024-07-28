@@ -35,7 +35,7 @@ pub use cliclack::{log, outro};
 pub use enum_dispatch::enum_dispatch;
 pub use futures::{select, FutureExt, StreamExt};
 pub use kaspa_consensus_core::network::NetworkId;
-pub use kaspa_rpc_core::api::rpc::RpcApi;
+// pub use kaspa_rpc_core::api::rpc::RpcApi;
 pub use kaspa_utils::hex::*;
 pub use rand::Rng;
 pub use serde::{de::DeserializeOwned, Deserialize, Serialize};

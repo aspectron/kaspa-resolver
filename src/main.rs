@@ -50,7 +50,7 @@ async fn main() {
 async fn run() -> Result<()> {
     let args = Arc::new(Args::parse());
 
-    config::init()?;
+    config::init(&args.user_config)?;
 
     match args.action {
         Action::Test => {

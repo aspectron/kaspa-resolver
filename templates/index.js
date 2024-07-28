@@ -87,6 +87,7 @@ function render() {
             encryption,
             network,
             cores,
+            memory,
             status,
             peers,
             clients,

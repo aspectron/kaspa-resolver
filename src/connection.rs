@@ -24,7 +24,7 @@ pub struct Connection {
     is_synced: AtomicBool,
     clients: AtomicU64,
     peers: AtomicU64,
-    node: Arc<NodeConfig>,
+    node: Arc<Node>,
     monitor: Arc<Monitor>,
     params: PathParams,
     client: rpc::Client,
@@ -37,7 +37,7 @@ pub struct Connection {
 impl Connection {
     pub fn try_new(
         monitor: Arc<Monitor>,
-        node: Arc<NodeConfig>,
+        node: Arc<Node>,
         _sender: Sender<PathParams>,
         args: &Arc<Args>,
     ) -> Result<Self> {
@@ -145,7 +145,7 @@ impl Connection {
     }
 
     #[inline]
-    pub fn node(&self) -> &Arc<NodeConfig> {
+    pub fn node(&self) -> &Arc<Node> {
         &self.node
     }
 
@@ -433,6 +433,7 @@ pub struct Status<'a> {
     pub encryption: TlsKind,
     pub network: &'a NetworkId,
     pub cores: u64,
+    pub memory: u64,
     pub status: &'static str,
     pub peers: u64,
     pub clients: u64,
@@ -457,7 +458,7 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
         let status = connection.status();
         let clients = delegate.clients();
         let peers = delegate.peers();
-        let (version, sid, capacity, cores) = delegate
+        let (version, sid, capacity, cores, memory) = delegate
             .caps()
             .as_ref()
             .as_ref()
@@ -467,9 +468,10 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
                     caps.system_id,
                     caps.clients_limit,
                     caps.cpu_physical_cores,
+                    caps.total_memory,
                 )
             })
-            .unwrap_or_else(|| ("n/a".to_string(), 0, 0, 0));
+            .unwrap_or_else(|| ("n/a".to_string(), 0, 0, 0, 0));
 
         let delegates = connection
             .resolve_delegates()
@@ -490,6 +492,7 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
             encryption,
             network,
             cores,
+            memory,
             status,
             clients,
             peers,

@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 use crate::imports::*;
 use chrono::prelude::*;
 
@@ -6,7 +8,7 @@ const VERSION: u64 = 2;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(rename = "transport")]
-    transports: TransportDictionary,
+    transports: Option<TransportDictionary>,
     #[serde(rename = "group")]
     groups: Option<Vec<Group>>,
     #[serde(rename = "node")]
@@ -14,17 +16,19 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn try_parse(toml: &str) -> Result<Vec<Arc<NodeConfig>>> {
+    pub fn try_parse(toml: &str) -> Result<Vec<Arc<Node>>> {
         let config = toml::from_str::<Config>(toml)?;
 
-        let mut nodes: Vec<Arc<NodeConfig>> = config
+        let mut nodes: Vec<Arc<Node>> = config
             .nodes
             .map(|nodes| {
                 nodes
                     .into_iter()
-                    .filter_map(|mut node| {
-                        node.uid = xxh3_64(node.address.as_bytes());
-                        node.enable.unwrap_or(true).then_some(node).map(Arc::new)
+                    .filter_map(|node| {
+                        node.enable
+                            .unwrap_or(true)
+                            .then_some(node.into())
+                            .map(Arc::new)
                     })
                     .collect::<Vec<_>>()
             })
@@ -47,7 +51,7 @@ impl Config {
             }
         }
 
-        let transport_dictionary = &config.transports;
+        let transport_dictionary = &config.transports.unwrap_or_default();
 
         for group in groups.iter() {
             if !group.fqdn.contains('*') {
@@ -69,13 +73,8 @@ impl Config {
                                     let fqdn = fqdn.replace('*', &id.to_lowercase());
                                     let address =
                                         transport.make_address(&fqdn, service, network_id);
-                                    let node = NodeConfig::new(
-                                        service,
-                                        *network_id,
-                                        transport,
-                                        fqdn,
-                                        address,
-                                    );
+                                    let node =
+                                        Node::new(service, *network_id, transport, fqdn, address);
                                     nodes.push(node);
                                 } else {
                                     log_error!("Config", "Unknown transport: {}", transport);
@@ -91,12 +90,34 @@ impl Config {
     }
 }
 
-pub fn init() -> Result<()> {
+static USER_CONFIG: LazyLock<Mutex<Option<Vec<Arc<Node>>>>> = LazyLock::new(|| Mutex::new(None));
+
+pub fn user_config() -> Option<Vec<Arc<Node>>> {
+    USER_CONFIG.lock().unwrap().clone()
+}
+
+pub fn init(user_config: &Option<PathBuf>) -> Result<()> {
     Settings::load();
 
     let global_config_folder = global_config_folder();
     if !global_config_folder.exists() {
         fs::create_dir_all(&global_config_folder)?;
+    }
+
+    if let Some(user_config) = user_config {
+        // let config_path = Path::new(config);
+        if !user_config.exists() {
+            Err(Error::custom(format!(
+                "Config file not found: `{}`",
+                user_config.display()
+            )))?;
+        } else {
+            let toml = fs::read_to_string(user_config)?;
+            USER_CONFIG
+                .lock()
+                .unwrap()
+                .replace(Config::try_parse(toml.as_str())?);
+        }
     }
 
     Ok(())
@@ -175,21 +196,21 @@ pub fn locate_local_config() -> Option<PathBuf> {
     })
 }
 
-pub fn test_config() -> Result<Vec<Arc<NodeConfig>>> {
+pub fn test_config() -> Result<Vec<Arc<Node>>> {
     let local_config = locate_local_config().ok_or(Error::LocalConfigNotFound)?;
     let toml = fs::read_to_string(local_config)?;
     // let local = include_str!("../Resolver.toml");
     Config::try_parse(toml.as_str())
 }
 
-pub fn load_config() -> Result<Vec<Arc<NodeConfig>>> {
+pub fn load_config() -> Result<Vec<Arc<Node>>> {
     match load_global_config() {
         Ok(config) => Ok(config),
         Err(_) => load_default_config(),
     }
 }
 
-pub fn load_global_config() -> Result<Vec<Arc<NodeConfig>>> {
+pub fn load_global_config() -> Result<Vec<Arc<Node>>> {
     let global_config_folder = global_config_folder();
     if !global_config_folder.exists() {
         fs::create_dir_all(&global_config_folder)?;
@@ -200,14 +221,14 @@ pub fn load_global_config() -> Result<Vec<Arc<NodeConfig>>> {
     Config::try_parse(toml.as_str()?)
 }
 
-pub fn load_default_config() -> Result<Vec<Arc<NodeConfig>>> {
+pub fn load_default_config() -> Result<Vec<Arc<Node>>> {
     let local_config_folder = local_config_folder().ok_or(Error::LocalConfigNotFound)?;
     let local_config = local_config_folder.join(local_config_file());
     let toml = fs::read_to_string(local_config)?;
     Config::try_parse(toml.as_str())
 }
 
-pub async fn update_global_config() -> Result<Option<Vec<Arc<NodeConfig>>>> {
+pub async fn update_global_config() -> Result<Option<Vec<Arc<Node>>>> {
     static HASH: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 
     log_info!("Config", "Updating resolver config");

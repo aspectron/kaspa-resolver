@@ -2,15 +2,12 @@ use crate::imports::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NodeConfig {
-    // uid of the node connection (hash(address))
-    #[serde(skip)]
-    pub uid: u64,
-    #[serde(skip)]
-    pub uid_string: String,
     // service type
     pub service: Service,
     // public URL for the node connection
-    pub address: String,
+    pub address: Option<String>,
+    // is TLS enabled (address wss:// or ws:// ?)
+    pub tls: bool,
     // protocol+encoding
     #[serde(rename = "transport-type")]
     pub transport_kind: TransportKind,
@@ -20,27 +17,97 @@ pub struct NodeConfig {
     pub enable: Option<bool>,
     // domain name (abc.example.com)
     pub fqdn: String,
-    // contains hash(fqdn+network_id)
-    pub network_node_uid: u64,
-
-    pub params: PathParams,
 }
 
-impl Eq for NodeConfig {}
+impl From<NodeConfig> for Node {
+    fn from(config: NodeConfig) -> Self {
+        let NodeConfig {
+            service,
+            address,
+            tls,
+            transport_kind,
+            network,
+            fqdn,
+            ..
+        } = config;
 
-impl PartialEq for NodeConfig {
-    fn eq(&self, other: &Self) -> bool {
-        self.address == other.address
+        let ws_proto = if tls { "wss://" } else { "ws://" };
+
+        let address = address.unwrap_or_else(|| {
+            let transport = Transport {
+                kind: transport_kind,
+                tls,
+                template: format!(
+                    "{ws_proto}${{fqdn}}/${{service}}/${{network}}/${{protocol}}/${{encoding}}"
+                ),
+            };
+            transport.make_address(&fqdn, &service, &network)
+        });
+
+        let tls = address.starts_with("wss://");
+        let uid = xxh3_64(address.as_bytes());
+        let uid_string = format!("{uid:016x}");
+        let network_node_uid = xxh3_64(format!("{fqdn}{network}{tls}").as_bytes());
+        let params = PathParams::new(transport_kind, tls.into(), network);
+
+        Self {
+            uid,
+            uid_string,
+            service,
+            params,
+            fqdn,
+            address,
+            transport_kind,
+            network,
+            network_node_uid,
+        }
     }
 }
 
-impl std::fmt::Display for NodeConfig {
+// #[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+pub struct Node {
+    // uid of the node connection (hash(address))
+    // #[serde(skip)]
+    pub uid: u64,
+    // #[serde(skip)]
+    pub uid_string: String,
+    // contains hash(fqdn+network_id)
+    // #[serde(skip)]
+    pub network_node_uid: u64,
+    // #[serde(skip)]
+    pub params: PathParams,
+
+    // ~~
+
+    // service type
+    pub service: Service,
+    // public URL for the node connection
+    pub address: String,
+    // protocol+encoding
+    // #[serde(rename = "transport-type")]
+    pub transport_kind: TransportKind,
+    // node network id
+    pub network: NetworkId,
+    // domain name (abc.example.com)
+    pub fqdn: String,
+}
+
+impl Eq for Node {}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.uid == other.uid
+    }
+}
+
+impl std::fmt::Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "[{:016x}] {}", self.uid, self.address)
     }
 }
 
-impl NodeConfig {
+impl Node {
     pub fn new<S1, S2>(
         service: &Service,
         network: NetworkId,
@@ -72,7 +139,6 @@ impl NodeConfig {
             address,
             transport_kind: *kind,
             network,
-            enable: None,
             network_node_uid,
         };
 
@@ -120,8 +186,8 @@ impl NodeConfig {
     }
 }
 
-impl AsRef<NodeConfig> for NodeConfig {
-    fn as_ref(&self) -> &NodeConfig {
+impl AsRef<Node> for Node {
+    fn as_ref(&self) -> &Node {
         self
     }
 }

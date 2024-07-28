@@ -120,7 +120,7 @@ impl Resolver {
                     )),
             );
         } else {
-            log_warn!("Limits", "Rate limit is disabled");
+            log_warn!("Limits", "HTTP rate limit is disabled");
         };
 
         router = router.layer(CorsLayer::new().allow_origin(Any));
@@ -233,10 +233,7 @@ impl Resolver {
         Ok(())
     }
 
-    async fn update_nodes(
-        self: &Arc<Self>,
-        mut global_node_list: Vec<Arc<NodeConfig>>,
-    ) -> Result<()> {
+    async fn update_nodes(self: &Arc<Self>, mut global_node_list: Vec<Arc<Node>>) -> Result<()> {
         self.inner.kaspa.update_nodes(&mut global_node_list).await?;
         self.inner
             .sparkle
@@ -249,19 +246,35 @@ impl Resolver {
         Ok(())
     }
 
-    async fn update(self: &Arc<Self>, fallback_to_local: bool) -> Result<()> {
-        match update_global_config().await {
-            Ok(Some(global_node_list)) => {
-                self.update_nodes(global_node_list).await?;
-                Ok(())
-            }
-            Ok(None) => Ok(()),
-            Err(_) if fallback_to_local => {
-                let node_list = load_config()?;
+    async fn update(self: &Arc<Self>, first_update: bool) -> Result<()> {
+        if let Some(node_list) = user_config() {
+            // load user config
+            // occurs only during start
+            if first_update {
                 self.update_nodes(node_list).await?;
-                Ok(())
             }
-            Err(err) => Err(err),
+            Ok(())
+        } else if self.args().auto_update {
+            // auto update global config
+            match update_global_config().await {
+                Ok(Some(global_node_list)) => {
+                    self.update_nodes(global_node_list).await?;
+                    Ok(())
+                }
+                Ok(None) => Ok(()),
+                Err(_) if first_update => {
+                    // fallback to local config on first update
+                    let node_list = load_config()?;
+                    self.update_nodes(node_list).await?;
+                    Ok(())
+                }
+                Err(err) => Err(err),
+            }
+        } else {
+            // no auto update, load local config
+            let node_list = load_config()?;
+            self.update_nodes(node_list).await?;
+            Ok(())
         }
     }
 

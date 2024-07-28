@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use thiserror::Error;
-use toml::de::Error as TomlError;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -9,13 +8,16 @@ pub enum Error {
     Custom(String),
 
     #[error("RPC error: {0}")]
-    Rpc(#[from] kaspa_wrpc_client::error::Error),
+    KaspaRpc(#[from] kaspa_wrpc_client::error::Error),
+
+    #[error(transparent)]
+    KaspaRpcCore(#[from] kaspa_rpc_core::RpcError),
 
     #[error(transparent)]
     SparkleRpc(#[from] sparkle_rpc_client::error::Error),
 
     #[error("TOML error: {0}")]
-    Toml(#[from] TomlError),
+    Toml(#[from] toml::de::Error),
 
     #[error("IO Error: {0}")]
     Io(#[from] std::io::Error),
@@ -40,9 +42,6 @@ pub enum Error {
 
     #[error(transparent)]
     Encryption(#[from] workflow_encryption::error::Error),
-
-    #[error(transparent)]
-    KaspaRpc(#[from] kaspa_rpc_core::RpcError),
 
     #[error("Incompatible connection protocol encoding")]
     ConnectionProtocolEncoding,

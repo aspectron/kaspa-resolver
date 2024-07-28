@@ -64,7 +64,7 @@ impl Monitor {
     /// Process an update to `Server.toml` removing or adding node connections accordingly.
     pub async fn update_nodes(
         self: &Arc<Self>,
-        global_node_list: &mut Vec<Arc<NodeConfig>>,
+        global_node_list: &mut Vec<Arc<Node>>,
     ) -> Result<()> {
         let mut nodes = Vec::new();
         global_node_list.retain(|node| {

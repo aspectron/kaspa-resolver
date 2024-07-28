@@ -1,5 +1,6 @@
 use super::{Caps, Connections};
 use crate::imports::*;
+pub use kaspa_rpc_core::api::rpc::RpcApi;
 use kaspa_rpc_core::{GetConnectionsResponse, GetSystemInfoResponse};
 pub use kaspa_wrpc_client::KaspaRpcClient;
 

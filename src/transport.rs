@@ -153,7 +153,7 @@ impl Transport {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct TransportDictionary(HashMap<String, Transport>);
 
 impl TransportDictionary {
