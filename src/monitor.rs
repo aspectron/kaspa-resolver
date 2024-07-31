@@ -202,8 +202,7 @@ impl Monitor {
     pub fn election(&self, params: &PathParams) -> Option<String> {
         let connections = self.connections.read().unwrap();
         let connections = connections
-            .get(params)
-            .expect("Monitor: expecting existing connection params")
+            .get(params)?
             .iter()
             .filter(|connection| connection.is_available())
             .collect::<Vec<_>>();
