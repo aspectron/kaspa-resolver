@@ -201,20 +201,24 @@ impl Monitor {
     // /// Get JSON string representing node information (id, url, provider, link)
     pub fn election(&self, params: &PathParams) -> Option<String> {
         let connections = self.connections.read().unwrap();
-        let connections = connections
-            .get(params)
-            .expect("Monitor: expecting existing connection params")
-            .iter()
-            .filter(|connection| connection.is_available())
-            .collect::<Vec<_>>();
+        if params.tls == TlsKind::Tls {
+            let connections = connections
+                .get(params)
+                .expect("Monitor: expecting existing connection params")
+                .iter()
+                .filter(|connection| connection.is_available())
+                .collect::<Vec<_>>();
 
-        if !connections.is_empty() {
-            let node = select_with_weighted_rng(connections);
-            serde_json::to_string(&Output::from(node)).ok()
-        } else {
-            None
-        }
+            if !connections.is_empty() {
+                let node = select_with_weighted_rng(connections);
+                serde_json::to_string(&Output::from(node)).ok()
+            } else {
+                None
+            }
+    } else {
+        None
     }
+}
 }
 
 fn select_with_weighted_rng(nodes: Vec<&Arc<Connection>>) -> &Arc<Connection> {
