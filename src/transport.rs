@@ -1,6 +1,5 @@
 use crate::imports::*;
 
-// #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, Hash)]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum TlsKind {
@@ -9,19 +8,16 @@ pub enum TlsKind {
     Any,
 }
 
-// impl PartialEq for TlsKind {
-//     fn eq(&self, other: &Self) -> bool {
-//         matches!(
-//             (self, other),
-//             (TlsKind::Tls, TlsKind::Tls)
-//                 | (TlsKind::None, TlsKind::None)
-//                 | (TlsKind::Any, TlsKind::Tls)
-//                 | (TlsKind::Any, TlsKind::None)
-//                 | (TlsKind::Tls, TlsKind::Any)
-//                 | (TlsKind::None, TlsKind::Any)
-//         )
-//     }
-// }
+impl Display for TlsKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            TlsKind::Tls => "tls",
+            TlsKind::None => "none",
+            TlsKind::Any => "any",
+        };
+        f.write_str(s)
+    }
+}
 
 impl From<bool> for TlsKind {
     fn from(b: bool) -> Self {
@@ -95,14 +91,6 @@ impl Display for TransportKind {
 }
 
 impl TransportKind {
-    // pub fn state_aggregator(&self) -> bool {
-    //     match self {
-    //         TransportKind::WrpcBorsh => true,
-    //         TransportKind::WrpcJson => false,
-    //         TransportKind::Grpc => false,
-    //     }
-    // }
-
     pub fn protocol(&self) -> ProtocolKind {
         match self {
             TransportKind::WrpcBorsh => ProtocolKind::Wrpc,

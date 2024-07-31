@@ -1,10 +1,23 @@
 use crate::imports::*;
 
+pub static NETWORKS: &[NetworkId] = &[
+    NetworkId::new(NetworkType::Mainnet),
+    NetworkId::with_suffix(NetworkType::Testnet, 10),
+    NetworkId::with_suffix(NetworkType::Testnet, 11),
+    // NetworkId::new(NetworkType::Devnet),
+    // NetworkId::new(NetworkType::Simnet),
+];
+
+pub static TRANSPORTS: &[TransportKind] = &[
+    TransportKind::WrpcBorsh,
+    TransportKind::WrpcJson,
+    // TransportKind::Grpc,
+];
+
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct PathParams {
     pub protocol: ProtocolKind,
     pub encoding: EncodingKind,
-    // pub transport_kind: TransportKind,
     pub network: NetworkId,
     pub tls: TlsKind,
 }
@@ -22,14 +35,33 @@ impl PathParams {
         }
     }
 
-    pub fn iter() -> impl Iterator<Item = PathParams> {
-        NetworkId::iter().flat_map(move |network_id| {
-            TransportKind::iter()
+    // iterates only TlsKind::Tls and TlsKind::None variants
+    pub fn iter_tls_strict() -> impl Iterator<Item = PathParams> {
+        NETWORKS.iter().flat_map(move |network_id| {
+            TRANSPORTS
+                .iter()
                 .map(move |transport_kind| {
-                    PathParams::new(*transport_kind, TlsKind::Tls, network_id)
+                    PathParams::new(*transport_kind, TlsKind::Tls, *network_id)
                 })
-                .chain(TransportKind::iter().map(move |transport_kind| {
-                    PathParams::new(*transport_kind, TlsKind::None, network_id)
+                .chain(TRANSPORTS.iter().map(move |transport_kind| {
+                    PathParams::new(*transport_kind, TlsKind::None, *network_id)
+                }))
+        })
+    }
+
+    // iterates TlsKind::Tls, TlsKind::None, and TlsKind::Any variants
+    pub fn iter_tls_any() -> impl Iterator<Item = PathParams> {
+        NETWORKS.iter().flat_map(move |network_id| {
+            TRANSPORTS
+                .iter()
+                .map(move |transport_kind| {
+                    PathParams::new(*transport_kind, TlsKind::Tls, *network_id)
+                })
+                .chain(TRANSPORTS.iter().map(move |transport_kind| {
+                    PathParams::new(*transport_kind, TlsKind::None, *network_id)
+                }))
+                .chain(TRANSPORTS.iter().map(move |transport_kind| {
+                    PathParams::new(*transport_kind, TlsKind::Any, *network_id)
                 }))
         })
     }
@@ -48,11 +80,25 @@ impl PathParams {
     pub fn tls(&self) -> TlsKind {
         self.tls
     }
+
+    #[inline]
+    pub fn to_tls(self, tls: TlsKind) -> Self {
+        Self { tls, ..self }
+    }
+
+    #[inline]
+    pub fn is_tls_strict(&self) -> bool {
+        matches!(self.tls, TlsKind::Tls | TlsKind::None)
+    }
 }
 
 impl fmt::Display for PathParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}:{}", self.protocol, self.encoding, self.network)
+        write!(
+            f,
+            "{}:{}:{}:{}",
+            self.tls, self.protocol, self.encoding, self.network
+        )
     }
 }
 

@@ -19,7 +19,6 @@ impl fmt::Display for Connection {
 #[derive(Debug)]
 pub struct Connection {
     args: Arc<Args>,
-    // caps: Arc<RwLock<Option<Caps>>>,
     caps: ArcSwapOption<Caps>,
     is_synced: AtomicBool,
     clients: AtomicU64,
@@ -79,57 +78,72 @@ impl Connection {
         self.args.verbose
     }
 
+    /// Represents the connection score, which is currently
+    /// the number of sockets (clients + peers) the node has.
     #[inline]
-    pub fn score(&self) -> u64 {
-        self.clients.load(Ordering::Relaxed)
+    pub fn score(self: &Arc<Self>) -> u64 {
+        self.delegate().sockets()
     }
 
+    /// Connection availability state.
     #[inline]
-    pub fn is_available(&self) -> bool {
-        self.is_delegate()
-            && self.online()
-            && self.caps.load().as_ref().as_ref().is_some_and(|caps| {
-                let clients = self.clients();
-                let peers = self.peers();
+    pub fn is_available(self: &Arc<Self>) -> bool {
+        let delegate = self.delegate();
+
+        self.is_connected()
+            && delegate.is_online()
+            && delegate.caps.load().as_ref().as_ref().is_some_and(|caps| {
+                let clients = delegate.clients();
+                let peers = delegate.peers();
                 clients < caps.clients_limit && clients + peers < caps.fd_limit
             })
     }
 
+    /// Indicates if the connection RPC is connected.
     #[inline]
-    pub fn connected(&self) -> bool {
+    pub fn is_connected(&self) -> bool {
         self.is_connected.load(Ordering::Relaxed)
     }
 
+    /// Indicates if the connection is available as a general
+    /// concept: no errors have occurred during RPC calls
+    /// and the node is in synced synced.
     #[inline]
-    pub fn online(&self) -> bool {
+    pub fn is_online(&self) -> bool {
         self.is_online.load(Ordering::Relaxed)
     }
 
+    /// Indicates if the node is in synced state.
     #[inline]
     pub fn is_synced(&self) -> bool {
         self.is_synced.load(Ordering::Relaxed)
     }
 
+    /// Number of RPC clients connected to the node.
     #[inline]
     pub fn clients(&self) -> u64 {
         self.clients.load(Ordering::Relaxed)
     }
 
+    /// Number of p2p peers connected to the node.
     #[inline]
     pub fn peers(&self) -> u64 {
         self.peers.load(Ordering::Relaxed)
     }
 
+    /// Total number of TCP sockets connected to the node.
     #[inline]
     pub fn sockets(&self) -> u64 {
         self.clients() + self.peers()
     }
 
+    /// Node capabilities (partial system spec, see [`Caps`])
     #[inline]
     pub fn caps(&self) -> Option<Arc<Caps>> {
         self.caps.load().clone()
     }
 
+    /// Unique system (machine) identifier of the node.
     #[inline]
     pub fn system_id(&self) -> u64 {
         self.caps
@@ -139,26 +153,37 @@ impl Connection {
             .unwrap_or_default()
     }
 
+    /// Connection address (URL).
     #[inline]
     pub fn address(&self) -> &str {
         self.node.address.as_str()
     }
 
+    /// Node configuration parameters used to create this connection.
     #[inline]
     pub fn node(&self) -> &Arc<Node> {
         &self.node
     }
 
+    /// Connection parameters used to create this connection.
+    #[inline]
+    pub fn params(&self) -> PathParams {
+        self.params
+    }
+
+    /// Network id of the node.
     #[inline]
     pub fn network_id(&self) -> NetworkId {
         self.node.network
     }
 
+    /// Indicates if the connection is a delegate.
     #[inline]
     pub fn is_delegate(&self) -> bool {
         self.delegate.load().is_none()
     }
 
+    /// Get the delegate of this connection.
     #[inline]
     pub fn delegate(self: &Arc<Self>) -> Arc<Connection> {
         match (**self.delegate.load()).clone() {
@@ -167,12 +192,17 @@ impl Connection {
         }
     }
 
+    /// Associate a delegate to this connection. A delegate is a primary
+    /// connection to the node that does actual performance monitoring
+    /// while non-delegate connections remain idle in a keep-alive state.
     #[inline]
     pub fn bind_delegate(&self, delegate: Option<Arc<Connection>>) {
         self.delegate.store(Arc::new(delegate));
     }
 
-    pub fn resolve_delegates(self: &Arc<Self>) -> Vec<Arc<Connection>> {
+    /// Creates a list of delegators for this connection, where the last
+    /// entry is the delegate.
+    pub fn resolve_delegators(self: &Arc<Self>) -> Vec<Arc<Connection>> {
         let mut delegates = Vec::new();
         let mut delegate = (*self).clone();
         while let Some(next) = (**delegate.delegate.load()).clone() {
@@ -183,7 +213,7 @@ impl Connection {
     }
 
     pub fn status(&self) -> &'static str {
-        if self.connected() {
+        if self.is_connected() {
             if !self.is_delegate() {
                 "delegator"
             } else if self.is_synced() {
@@ -207,14 +237,11 @@ impl Connection {
         let shutdown_ctl_receiver = self.shutdown_ctl.request.receiver.clone();
         let shutdown_ctl_sender = self.shutdown_ctl.response.sender.clone();
 
-        // let mut ttl = sleep(TtlSettings::period());
         let mut ttl = TtlSettings::ttl();
         // TODO - delegate state changes inside `update_state()`!
         let mut poll = if self.is_delegate() {
-            // workflow_core::task::
             interval(SyncSettings::poll())
         } else {
-            // workflow_core::task::
             interval(SyncSettings::ping())
         };
 
@@ -474,7 +501,7 @@ impl<'a> From<&'a Arc<Connection>> for Status<'a> {
             .unwrap_or_else(|| ("n/a".to_string(), 0, 0, 0, 0));
 
         let delegates = connection
-            .resolve_delegates()
+            .resolve_delegators()
             .iter()
             .map(|connection| format!("[{:016x}] {}", connection.system_id(), connection.address()))
             .collect::<Vec<String>>();

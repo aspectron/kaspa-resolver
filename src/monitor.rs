@@ -24,7 +24,7 @@ impl fmt::Debug for Monitor {
 
 impl Monitor {
     pub fn new(args: &Arc<Args>, service: Service) -> Self {
-        let sorts = PathParams::iter()
+        let sorts = PathParams::iter_tls_any()
             .map(|params| (params, AtomicBool::new(false)))
             .collect();
 
@@ -52,12 +52,9 @@ impl Monitor {
     }
 
     pub fn to_vec(&self) -> Vec<Arc<Connection>> {
-        self.connections
-            .read()
-            .unwrap()
-            .values()
+        PathParams::iter_tls_strict()
+            .filter_map(|params| self.connections.read().unwrap().get(&params).cloned())
             .flatten()
-            .cloned()
             .collect()
     }
 
@@ -78,7 +75,10 @@ impl Monitor {
 
         let mut connections = self.connections();
 
-        for params in PathParams::iter() {
+        let mut tls_any_created = Vec::new();
+        let mut tls_any_removed = Vec::new();
+
+        for params in PathParams::iter_tls_strict() {
             let nodes = nodes
                 .iter()
                 .filter(|node| node.params() == &params)
@@ -105,22 +105,45 @@ impl Monitor {
                     &self.args,
                 )?);
                 created.start()?;
-                list.push(created);
+                list.push(created.clone());
+                tls_any_created.push(created);
             }
 
             for removed in remove {
                 removed.stop().await?;
                 list.retain(|c| c.node() != removed.node());
+                tls_any_removed.push(removed);
             }
         }
 
-        let targets = AHashMap::group_from(connections.values().flatten().map(|c| {
-            (
-                c.node().network_node_uid(),
-                c.node().transport_kind(),
-                c.clone(),
-            )
-        }));
+        // remove connections from TlsAny list
+        tls_any_removed.into_iter().for_each(|connection| {
+            let params = connection.params().to_tls(TlsKind::Any);
+            let list = connections.entry(params).or_default();
+            list.retain(|connection| connection.node() != connection.node());
+        });
+
+        // create connections in TlsAny list
+        tls_any_created.into_iter().for_each(|connection| {
+            let params = connection.params().to_tls(TlsKind::Any);
+            let list = connections.entry(params).or_default();
+            list.push(connection);
+        });
+
+        // collect all strict Tls connections and group them by network_uid (fqdn+network+tls)
+        let targets = AHashMap::group_from(
+            connections
+                .iter()
+                .filter_map(|(params, list)| params.is_tls_strict().then_some(list))
+                .flatten()
+                .map(|connection| {
+                    (
+                        connection.node().network_node_uid(),
+                        connection.node().transport_kind(),
+                        connection.clone(),
+                    )
+                }),
+        );
 
         for (_network_uid, transport_map) in targets.iter() {
             if let Some(wrpc_borsh) = transport_map.get(&TransportKind::WrpcBorsh) {
@@ -128,6 +151,23 @@ impl Monitor {
                     wrpc_json.bind_delegate(Some(wrpc_borsh.clone()));
                 } else if let Some(grpc) = transport_map.get(&TransportKind::Grpc) {
                     grpc.bind_delegate(Some(wrpc_borsh.clone()));
+                }
+            }
+        }
+
+        if self.args.debug {
+            for params in PathParams::iter_tls_any() {
+                println!("{}:{}", self.service, params);
+                if let Some(connections) = connections.get(&params) {
+                    if connections.is_empty() {
+                        println!("\t- None (0)");
+                    } else {
+                        for connection in connections {
+                            println!("\t- {}", connection);
+                        }
+                    }
+                } else {
+                    println!("\t- N/A");
                 }
             }
         }
@@ -191,16 +231,37 @@ impl Monitor {
         Ok(())
     }
 
-    pub fn schedule_sort(&self, params: &PathParams) {
+    pub fn schedule_sort(&self, params_tls_kind: &PathParams) {
         self.sorts
-            .get(params)
+            .get(params_tls_kind)
+            .unwrap()
+            .store(true, Ordering::Relaxed);
+
+        let params_tls_any = params_tls_kind.to_tls(TlsKind::Any);
+        self.sorts
+            .get(&params_tls_any)
             .unwrap()
             .store(true, Ordering::Relaxed);
     }
 
     // /// Get JSON string representing node information (id, url, provider, link)
     pub fn election(&self, params: &PathParams) -> Option<String> {
+        if self.verbose() {
+            println!("election for: {}", params);
+        }
+
         let connections = self.connections.read().unwrap();
+
+        if self.verbose() {
+            if let Some(connections) = connections.get(params) {
+                for connection in connections {
+                    println!("\t- {}", connection);
+                }
+            } else {
+                println!("\t- N/A");
+            }
+        }
+
         let connections = connections
             .get(params)?
             .iter()

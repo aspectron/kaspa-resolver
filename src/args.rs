@@ -24,6 +24,8 @@ pub struct Args {
     pub verbose: bool,
     /// Tracing mode
     pub trace: bool,
+    /// Debug mode
+    pub debug: bool,
     /// Auto-update
     pub auto_update: bool,
     /// Custom config file
@@ -48,6 +50,7 @@ impl Args {
             .arg(arg!(--version "Display software version"))
             .arg(arg!(--verbose "Enable verbose logging"))
             .arg(arg!(--trace "Enable trace log level"))
+            .arg(arg!(--debug "Enable additional debug output"))
             // .arg(arg!(--auto-update "Poll configuration updates"))
             // .arg(arg!(--election "Show node data on each election"))
             // .arg(arg!(--status "Enable `/status` endpoint"))
@@ -93,6 +96,7 @@ impl Args {
 
         let trace = matches.get_one::<bool>("trace").cloned().unwrap_or(false);
         let verbose = matches.get_one::<bool>("verbose").cloned().unwrap_or(false);
+        let debug = matches.get_one::<bool>("debug").cloned().unwrap_or(false);
         let auto_update = matches
             .get_one::<bool>("auto-update")
             .cloned()
@@ -166,6 +170,7 @@ impl Args {
         Args {
             trace,
             verbose,
+            debug,
             auto_update,
             user_config,
             // election,

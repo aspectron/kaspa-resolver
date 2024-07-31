@@ -149,7 +149,6 @@ pub async fn json_handler(resolver: &Arc<Resolver>, req: Request<Body>) -> impl 
 
 pub async fn status_handler(resolver: &Arc<Resolver>, req: RequestKind) -> impl IntoResponse {
     let ctx = resolve_session(resolver, &req);
-    println!("ctx: {:?}", ctx);
     match ctx {
         Ok((Some(session), cookie)) => {
             session.touch();
