@@ -90,6 +90,25 @@ impl Config {
     }
 }
 
+mod fs {
+    use super::*;
+    use std::fs;
+
+    pub use fs::create_dir_all;
+
+    pub fn read_to_string<P: AsRef<Path>>(path: P) -> Result<String> {
+        fs::read_to_string(path.as_ref()).map_err(|err| Error::file(path, err))
+    }
+
+    pub fn read<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
+        fs::read(path.as_ref()).map_err(|err| Error::file(path, err))
+    }
+
+    pub fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, content: C) -> Result<()> {
+        fs::write(path.as_ref(), content).map_err(|err| Error::file(path, err))
+    }
+}
+
 static USER_CONFIG: LazyLock<Mutex<Option<Vec<Arc<Node>>>>> = LazyLock::new(|| Mutex::new(None));
 
 pub fn user_config() -> Option<Vec<Arc<Node>>> {
@@ -180,7 +199,7 @@ pub fn load_key() -> Result<Secret> {
     if !key_path.exists() {
         return Err(Error::KeyNotFound);
     }
-    Ok(Secret::from(fs::read(key_path)?))
+    Ok(Secret::from(fs::read(&key_path)?))
 }
 
 pub fn load_key64() -> Result<u64> {
@@ -189,7 +208,7 @@ pub fn load_key64() -> Result<u64> {
         return Err(Error::KeyNotFound);
     }
     Ok(u64::from_be_bytes(
-        fs::read(key64_path)?.try_into().unwrap(),
+        fs::read(&key64_path)?.try_into().unwrap(),
     ))
 }
 
@@ -210,7 +229,7 @@ pub fn locate_local_config() -> Option<PathBuf> {
 
 pub fn test_config() -> Result<Vec<Arc<Node>>> {
     let local_config = locate_local_config().ok_or(Error::LocalConfigNotFound)?;
-    let toml = fs::read_to_string(local_config)?;
+    let toml = fs::read_to_string(&local_config)?;
     // let local = include_str!("../Resolver.toml");
     Config::try_parse(toml.as_str())
 }

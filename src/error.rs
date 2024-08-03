@@ -22,6 +22,9 @@ pub enum Error {
     #[error("IO Error: {0}")]
     Io(#[from] std::io::Error),
 
+    #[error("Unable to read file: `{0}`, {1}")]
+    File(String, std::io::Error),
+
     #[error(transparent)]
     Serde(#[from] serde_json::Error),
 
@@ -74,6 +77,12 @@ pub enum Error {
 impl Error {
     pub fn custom<T: std::fmt::Display>(msg: T) -> Self {
         Error::Custom(msg.to_string())
+    }
+}
+
+impl Error {
+    pub fn file<P: AsRef<std::path::Path>>(path: P, err: std::io::Error) -> Self {
+        Error::File(path.as_ref().display().to_string(), err)
     }
 }
 
