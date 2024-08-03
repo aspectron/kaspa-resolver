@@ -255,8 +255,19 @@ pub fn load_global_config() -> Result<Vec<Arc<Node>>> {
 pub fn load_default_config() -> Result<Vec<Arc<Node>>> {
     let local_config_folder = local_config_folder().ok_or(Error::LocalConfigNotFound)?;
     let local_config = local_config_folder.join(local_config_file());
-    let toml = fs::read_to_string(local_config)?;
-    Config::try_parse(toml.as_str())
+
+    if local_config.exists() {
+        log_info!("Config", "Using local config: `{}`", local_config.display());
+        let toml = fs::read_to_string(local_config)?;
+        Config::try_parse(toml.as_str())
+    } else {
+        let local_config = local_config_folder.join(global_config_file());
+        log_info!("Config", "Using local config: `{}`", local_config.display());
+        let key = load_key()?;
+        let data = fs::read(local_config)?;
+        let toml = chacha20poly1305::decrypt_slice(&data, &key)?;
+        Config::try_parse(toml.as_str()?)
+    }
 }
 
 pub async fn update_global_config() -> Result<Option<Vec<Arc<Node>>>> {
