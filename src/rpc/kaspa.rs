@@ -98,7 +98,8 @@ impl rpc::ClientT for Client {
     }
 
     async fn get_active_connections(&self) -> Result<Connections> {
-        let GetConnectionsResponse { clients, peers } = self.client.get_connections().await?;
+        let GetConnectionsResponse { clients, peers, .. } =
+            self.client.get_connections(false).await?;
 
         Ok(Connections {
             clients: clients as u64,
