@@ -3,7 +3,7 @@ pub mod sparkle;
 
 use crate::imports::*;
 
-const SOCKETS_PER_CORE: u64 = 1024;
+const SOCKETS_PER_CORE: u32 = 768;
 
 #[allow(dead_code)]
 #[derive(Debug)]

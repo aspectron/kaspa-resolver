@@ -11,7 +11,7 @@ dependencies = [
  "macroific",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -213,7 +213,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "serde",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -272,7 +272,7 @@ checksum = "d7ebdfa2ebdab6b1760375fa7d6f382b9f486eac35fc994625a00e89280bdbb7"
 dependencies = [
  "async-task",
  "concurrent-queue",
- "fastrand 2.1.0",
+ "fastrand 2.1.1",
  "futures-lite 2.3.0",
  "slab",
 ]
@@ -325,7 +325,7 @@ dependencies = [
  "futures-lite 2.3.0",
  "parking",
  "polling 3.7.3",
- "rustix 0.38.34",
+ "rustix 0.38.36",
  "slab",
  "tracing",
  "windows-sys 0.59.0",
@@ -386,13 +386,13 @@ checksum = "8b75356056920673b02621b35afd0f7dda9306d03c79a30f5c56c44cf256e3de"
 
 [[package]]
 name = "async-trait"
-version = "0.1.81"
+version = "0.1.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e0c28dcc82d7c8ead5cb13beb15405b57b8546e93215673ff8ca0349a028107"
+checksum = "a27b8a3a6e1a44fa4c8baf1f653e4172e81486d4941f2237e20dc2d0cf4ddff1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -592,7 +592,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
  "syn_derive",
 ]
 
@@ -614,9 +614,9 @@ checksum = "79296716171880943b8470b5f8d03aa55eb2e645a4874bdbb28adb49162e012c"
 
 [[package]]
 name = "bytemuck"
-version = "1.17.0"
+version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fd4c6dcc3b0aea2f5c0b4b82c2b15fe39ddbc76041a310848f4706edf76bb31"
+checksum = "94bbb0ad554ad961ddc5da507a12a29b14e4ae5bda06b19f575a3e6079d2e2ae"
 
 [[package]]
 name = "byteorder"
@@ -670,9 +670,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.1.13"
+version = "1.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72db2f7947ecee9b03b510377e8bb9077afa27176fdbff55c51027e976fdcc48"
+checksum = "e9d013ecb737093c0e86b151a7b837993cf9ec6c502946cfb44bedc392421e0b"
 dependencies = [
  "shlex",
 ]
@@ -774,9 +774,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.16"
+version = "4.5.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed6719fffa43d0d87e5fd8caeab59be1554fb028cd30edc88fc4369b17971019"
+checksum = "3e5a21b8495e732f1b3c364c9949b201ca7bae518c502c80256c96ad79eaf6ac"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -784,9 +784,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.15"
+version = "4.5.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "216aec2b177652e3846684cbfe25c9964d18ec45234f0f5da5157b207ed1aab6"
+checksum = "8cf2dd12af7a047ad9d6da2b6b249759a22a7abc0f474c1dae1777afa4b21a73"
 dependencies = [
  "anstream",
  "anstyle",
@@ -803,7 +803,7 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -814,9 +814,9 @@ checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
 
 [[package]]
 name = "cliclack"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b6ae7d526588fce6be2262e83b654a95de64430b54305f3a340c0ee5de18014"
+checksum = "0c827ccada848b64fba073b64518a7416d605ad70c594b5450b5ed1d97e3b5d4"
 dependencies = [
  "console",
  "indicatif",
@@ -856,9 +856,9 @@ dependencies = [
 
 [[package]]
 name = "constant_time_eq"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7144d30dcf0fafbce74250a3963025d8d52177934239851c917d29f1df280c2"
+checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
 
 [[package]]
 name = "convert_case"
@@ -1015,7 +1015,7 @@ checksum = "f46882e17999c6cc590af592290432be3bce0428cb0d5f8b6715e4dc7b383eb3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -1039,7 +1039,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "strsim",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -1050,14 +1050,14 @@ checksum = "d336a2a514f6ccccaa3e09b02d41d35330c07ddf03a62165fcec10bb561c7806"
 dependencies = [
  "darling_core",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
 name = "dashmap"
-version = "6.0.1"
+version = "6.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "804c8821570c3f8b70230c2ba75ffa5c0f9a4189b9a432b6656c536712acae28"
+checksum = "5041cc499144891f3790297212f32a74fb938e5136a14943f338ef9e0ae276cf"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-utils",
@@ -1082,7 +1082,7 @@ dependencies = [
  "macroific",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -1108,33 +1108,33 @@ dependencies = [
 
 [[package]]
 name = "derive_builder"
-version = "0.20.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0350b5cb0331628a5916d6c5c0b72e97393b8b6b03b47a9284f4e7f5a405ffd7"
+checksum = "cd33f37ee6a119146a1781d3356a7c26028f83d779b2e04ecd45fdc75c76877b"
 dependencies = [
  "derive_builder_macro",
 ]
 
 [[package]]
 name = "derive_builder_core"
-version = "0.20.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d48cda787f839151732d396ac69e3473923d54312c070ee21e9effcaa8ca0b1d"
+checksum = "7431fa049613920234f22c47fdc33e6cf3ee83067091ea4277a3f8c4587aae38"
 dependencies = [
  "darling",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
 name = "derive_builder_macro"
-version = "0.20.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "206868b8242f27cecce124c19fd88157fbd0dd334df2587f36417bafbc85097b"
+checksum = "4abae7035bf79b9877b779505d8cf3749285b80c43941eda66604841889451dc"
 dependencies = [
  "derive_builder_core",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -1147,7 +1147,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustc_version",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -1248,7 +1248,7 @@ dependencies = [
  "once_cell",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -1312,7 +1312,7 @@ dependencies = [
  "macroific",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -1335,9 +1335,9 @@ dependencies = [
 
 [[package]]
 name = "fastrand"
-version = "2.1.0"
+version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fc0510504f03c51ada170672ac806f1f105a88aa97a5281117e1ddc3368e51a"
+checksum = "e8c02a5121d4ea3eb16a80748c74f5549a5665e4c21333c6098f283870fbdea6"
 
 [[package]]
 name = "fiat-crypto"
@@ -1347,9 +1347,9 @@ checksum = "28dea519a9695b9977216879a3ebfddf92f1c08c05d984f8996aecd6ecdc811d"
 
 [[package]]
 name = "filetime"
-version = "0.2.24"
+version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf401df4a4e3872c4fe8151134cf483738e74b67fc934d6532c882b3d24a4550"
+checksum = "35c0522e981e68cbfa8c3f978441a5f34b30b96e146b33cd3359176b50fe8586"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
@@ -1368,9 +1368,9 @@ dependencies = [
 
 [[package]]
 name = "flate2"
-version = "1.0.32"
+version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c0596c1eac1f9e04ed902702e9878208b336edc9d6fddc8a48387349bab3666"
+checksum = "324a1be68054ef05ad64b861cc9eaf1d623d2d8cb25b4bf2cb9cdd902b4bf253"
 dependencies = [
  "crc32fast",
  "miniz_oxide 0.8.0",
@@ -1475,7 +1475,7 @@ version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52527eb5074e35e9339c6b4e8d12600c7128b68fb25dcb9fa9dec18f7c25f3a5"
 dependencies = [
- "fastrand 2.1.0",
+ "fastrand 2.1.1",
  "futures-core",
  "futures-io",
  "parking",
@@ -1490,7 +1490,7 @@ checksum = "87750cf4b7a4c0625b1529e4c543c2182106e4dedc60a2a6455e00d212c489ac"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -1577,7 +1577,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "http",
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "slab",
  "tokio",
  "tokio-util",
@@ -1766,9 +1766,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-rustls"
-version = "0.27.2"
+version = "0.27.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ee4be2c948921a1a5320b629c4193916ed787a7f7f293fd3f7f5a6c9de74155"
+checksum = "08afdbb5c31130e3034af566421053ab03787c640246a446327f550d11bcb333"
 dependencies = [
  "futures-util",
  "http",
@@ -1897,9 +1897,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.4.0"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93ead53efc7ea8ed3cfb0c79fc8023fbb782a5432b52830b6518941cebe6505c"
+checksum = "68b900aa2f7301e21c36462b170ee99994de34dff39a4a6a528e80e7376d07e5"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.5",
@@ -2021,8 +2021,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-addresses"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "borsh",
  "js-sys",
@@ -2036,8 +2036,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-bip32"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "borsh",
  "bs58",
@@ -2063,8 +2063,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-consensus-client"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "ahash",
  "cfg-if 1.0.0",
@@ -2092,8 +2092,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-consensus-core"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "async-trait",
  "borsh",
@@ -2127,8 +2127,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-consensus-notify"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "async-channel 2.3.1",
  "cfg-if 1.0.0",
@@ -2147,8 +2147,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-consensus-wasm"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "cfg-if 1.0.0",
  "faster-hex",
@@ -2172,8 +2172,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-core"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "cfg-if 1.0.0",
  "ctrlc",
@@ -2191,8 +2191,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-hashes"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "blake2b_simd",
  "borsh",
@@ -2210,8 +2210,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-index-core"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "async-channel 2.3.1",
  "async-trait",
@@ -2230,8 +2230,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-math"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "borsh",
  "faster-hex",
@@ -2250,16 +2250,16 @@ dependencies = [
 
 [[package]]
 name = "kaspa-merkle"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "kaspa-hashes",
 ]
 
 [[package]]
 name = "kaspa-metrics-core"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "async-trait",
  "borsh",
@@ -2275,8 +2275,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-mining-errors"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "kaspa-consensus-core",
  "thiserror",
@@ -2284,8 +2284,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-muhash"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "kaspa-hashes",
  "kaspa-math",
@@ -2295,8 +2295,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-notify"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "async-channel 2.3.1",
  "async-trait",
@@ -2304,7 +2304,7 @@ dependencies = [
  "derive_more",
  "futures",
  "futures-util",
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "itertools 0.13.0",
  "kaspa-addresses",
  "kaspa-consensus-core",
@@ -2327,8 +2327,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-pow"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "js-sys",
  "kaspa-consensus-client",
@@ -2343,7 +2343,7 @@ dependencies = [
 
 [[package]]
 name = "kaspa-resolver"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "ahash",
  "arc-swap",
@@ -2391,8 +2391,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-rpc-core"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "async-channel 2.3.1",
  "async-trait",
@@ -2433,8 +2433,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-rpc-macros"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro-error",
@@ -2446,14 +2446,14 @@ dependencies = [
 
 [[package]]
 name = "kaspa-txscript"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "blake2b_simd",
  "borsh",
  "cfg-if 1.0.0",
  "hexplay",
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "itertools 0.13.0",
  "kaspa-addresses",
  "kaspa-consensus-core",
@@ -2477,8 +2477,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-txscript-errors"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "secp256k1",
  "thiserror",
@@ -2486,8 +2486,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-utils"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "arc-swap",
  "async-channel 2.3.1",
@@ -2516,8 +2516,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wallet-core"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "aes",
  "ahash",
@@ -2595,8 +2595,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wallet-keys"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "async-trait",
  "borsh",
@@ -2628,8 +2628,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wallet-macros"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "convert_case 0.5.0",
  "proc-macro-error",
@@ -2642,8 +2642,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wallet-pskt"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "bincode",
  "derive_builder",
@@ -2670,8 +2670,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wasm"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "cfg-if 1.0.0",
  "js-sys",
@@ -2699,8 +2699,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wasm-core"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "faster-hex",
  "hexplay",
@@ -2711,8 +2711,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wrpc-client"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "async-std",
  "async-trait",
@@ -2747,8 +2747,8 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wrpc-wasm"
-version = "0.14.1"
-source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=omega#b7fcdd331280d39f0f5f4b31a140a330c0549a8f"
+version = "0.14.5"
+source = "git+https://github.com/aspectron/rusty-kaspa.git?branch=pnn-v1#afbcf9e473acfe238b43785cab52f09387307588"
 dependencies = [
  "ahash",
  "async-std",
@@ -2939,7 +2939,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -2950,7 +2950,7 @@ checksum = "13198c120864097a565ccb3ff947672d969932b7975ebd4085732c9f09435e55"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -2963,14 +2963,14 @@ dependencies = [
  "macroific_core",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
 name = "malachite-base"
-version = "0.4.15"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5f8d7930df6fcb9c86761ca0999ba484d7b6469c81cee4a7d38da5386440f96"
+checksum = "46059721011b0458b7bd6d9179be5d0b60294281c23320c207adceaecc54d13b"
 dependencies = [
  "hashbrown 0.14.5",
  "itertools 0.11.0",
@@ -2980,9 +2980,9 @@ dependencies = [
 
 [[package]]
 name = "malachite-nz"
-version = "0.4.15"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa263ca62420c1f65cf6758f55c979a49ad83169f332e602b1890f1e1277a429"
+checksum = "1503b27e825cabd1c3d0ff1e95a39fb2ec9eab6fd3da6cfa41aec7091d273e78"
 dependencies = [
  "itertools 0.11.0",
  "libm",
@@ -3292,9 +3292,9 @@ checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "object"
-version = "0.36.3"
+version = "0.36.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27b64972346851a39438c60b341ebc01bba47464ae329e55cf343eb93964efd9"
+checksum = "084f1a5821ac4c651660a94a7153d27ac9d8a53736203f58b31945ded098070a"
 dependencies = [
  "memchr",
 ]
@@ -3334,7 +3334,7 @@ checksum = "a948666b637a0f465e8564c73e89d4dde00d72d4d473cc972f390fc3dcee7d9c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -3441,7 +3441,7 @@ checksum = "70df726c43c645ef1dde24c7ae14692036ebe5457c92c5f0ec4cfceb99634ff6"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -3494,7 +3494,7 @@ checksum = "2f38a4412a78282e09a2cf38d195ea5420d15ba0602cb375210efbc877243965"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -3516,7 +3516,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96c8c490f422ef9a4efd2cb5b42b76c8613d7e7dfc1caf667b8a3350a5acc066"
 dependencies = [
  "atomic-waker",
- "fastrand 2.1.0",
+ "fastrand 2.1.1",
  "futures-io",
 ]
 
@@ -3552,7 +3552,7 @@ dependencies = [
  "concurrent-queue",
  "hermit-abi 0.4.0",
  "pin-project-lite",
- "rustix 0.38.34",
+ "rustix 0.38.36",
  "tracing",
  "windows-sys 0.59.0",
 ]
@@ -3591,11 +3591,11 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-crate"
-version = "3.1.0"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d37c51ca738a55da99dc0c4a34860fd675453b8b36209178c2249bb13651284"
+checksum = "8ecf48c7ca261d60b74ab1a7b20da18bede46776b2e55535cb958eb595c5fa7b"
 dependencies = [
- "toml_edit 0.21.1",
+ "toml_edit",
 ]
 
 [[package]]
@@ -3641,9 +3641,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.36"
+version = "1.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fa76aaf39101c457836aec0ce2316dbdc3ab723cdda1c6bd4e6ad4208acaca7"
+checksum = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af"
 dependencies = [
  "proc-macro2",
 ]
@@ -3816,9 +3816,9 @@ dependencies = [
 
 [[package]]
 name = "rlimit"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3560f70f30a0f16d11d01ed078a07740fe6b489667abc7c7b029155d9f21c3d8"
+checksum = "7043b63bd0cd1aaa628e476b80e6d4023a3b50eb32789f2728908107bd0c793a"
 dependencies = [
  "libc",
 ]
@@ -3831,9 +3831,9 @@ checksum = "719b953e2095829ee67db738b3bfa9fa368c94900df327b3f07fe6e794d2fe1f"
 
 [[package]]
 name = "rustc_version"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfa0f585226d2e68097d4f95d113b15b83a82e819ab25717ec0590d9584ef366"
+checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
 ]
@@ -3854,9 +3854,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.34"
+version = "0.38.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70dc5ec042f7a43c4a73241207cecc9873a06d45debb38b329f8541d85c2730f"
+checksum = "3f55e80d50763938498dd5ebb18647174e0c76dc38c5505294bb224624f30f36"
 dependencies = [
  "bitflags 2.6.0",
  "errno",
@@ -3896,9 +3896,9 @@ checksum = "fc0a2ce646f8655401bb81e7927b812614bd5d91dbc968696be50603510fcaf0"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.102.6"
+version = "0.102.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e6b52d4fda176fd835fdc55a835d4a89b8499cad995885a21149d5ad62f852e"
+checksum = "84678086bd54edf2b415183ed7a94d0efb049f1b646a33e22a36f3794be6ae56"
 dependencies = [
  "ring",
  "rustls-pki-types",
@@ -4001,9 +4001,9 @@ checksum = "f97841a747eef040fcd2e7b3b9a220a7205926e60488e673d9e4926d27772ce5"
 
 [[package]]
 name = "serde"
-version = "1.0.208"
+version = "1.0.209"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cff085d2cb684faa248efb494c39b68e522822ac0de72ccf08109abde717cfb2"
+checksum = "99fce0ffe7310761ca6bf9faf5115afbc19688edd00171d81b1bb1b116c63e09"
 dependencies = [
  "serde_derive",
 ]
@@ -4042,20 +4042,20 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.208"
+version = "1.0.209"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24008e81ff7613ed8e5ba0cfaf24e2c2f1e5b8a0495711e44fcd4882fca62bcf"
+checksum = "a5831b979fd7b5439637af1752d535ff49f4860c0f341d1baeb6faf0f4242170"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
 name = "serde_json"
-version = "1.0.125"
+version = "1.0.128"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83c8e735a073ccf5be70aa8066aa984eaf2fa000db6c8d0100ae605b366d31ed"
+checksum = "6ff5456707a1de34e7e37f2a6fd3d3f808c318259cbd01ab6377795054b483d8"
 dependencies = [
  "itoa",
  "memchr",
@@ -4081,7 +4081,7 @@ checksum = "6c64451ba24fc7a6a2d60fc75dd9c83c90903b19028d4eff35e88fc1e86564e9"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -4115,7 +4115,7 @@ dependencies = [
  "chrono",
  "hex",
  "indexmap 1.9.3",
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "serde",
  "serde_derive",
  "serde_json",
@@ -4132,7 +4132,7 @@ dependencies = [
  "darling",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -4141,7 +4141,7 @@ version = "0.9.34+deprecated"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
 dependencies = [
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "itoa",
  "ryu",
  "serde",
@@ -4276,7 +4276,7 @@ checksum = "5dd62203d74a728ae353b4d716fc2a80e8da881dfdf8bbc0c012d877a58c4030"
 [[package]]
 name = "sparkle-core"
 version = "0.0.1"
-source = "git+https://github.com/aspectron/sparkle.git?branch=omega#5362f46944d67092cc5cdbec062113ba0b382b98"
+source = "git+https://github.com/aspectron/sparkle.git?branch=pnn-v1#134f849dddbc51ef306df06b8ffde27664510140"
 dependencies = [
  "ahash",
  "async-trait",
@@ -4327,7 +4327,7 @@ dependencies = [
 [[package]]
 name = "sparkle-macros"
 version = "0.0.1"
-source = "git+https://github.com/aspectron/sparkle.git?branch=omega#5362f46944d67092cc5cdbec062113ba0b382b98"
+source = "git+https://github.com/aspectron/sparkle.git?branch=pnn-v1#134f849dddbc51ef306df06b8ffde27664510140"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro-error",
@@ -4340,7 +4340,7 @@ dependencies = [
 [[package]]
 name = "sparkle-rpc-client"
 version = "0.0.1"
-source = "git+https://github.com/aspectron/sparkle.git?branch=omega#5362f46944d67092cc5cdbec062113ba0b382b98"
+source = "git+https://github.com/aspectron/sparkle.git?branch=pnn-v1#134f849dddbc51ef306df06b8ffde27664510140"
 dependencies = [
  "async-std",
  "async-trait",
@@ -4365,7 +4365,7 @@ dependencies = [
 [[package]]
 name = "sparkle-rpc-core"
 version = "0.0.1"
-source = "git+https://github.com/aspectron/sparkle.git?branch=omega#5362f46944d67092cc5cdbec062113ba0b382b98"
+source = "git+https://github.com/aspectron/sparkle.git?branch=pnn-v1#134f849dddbc51ef306df06b8ffde27664510140"
 dependencies = [
  "async-std",
  "async-trait",
@@ -4422,9 +4422,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.75"
+version = "2.0.77"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6af063034fc1935ede7be0122941bafa9bacb949334d090b77ca98b5817c7d9"
+checksum = "9f35bcdf61fd8e7be6caf75f429fdca8beb3ed76584befb503b1569faee373ed"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4440,7 +4440,7 @@ dependencies = [
  "proc-macro-error",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -4460,9 +4460,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.31.2"
+version = "0.31.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4115055da5f572fff541dd0c4e61b0262977f453cc9fe04be83aba25a89bdab"
+checksum = "355dbe4f8799b304b05e1b0f05fc59b2a18d36645cf169607da45bde2f69a1be"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -4500,9 +4500,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04cbcdd0c794ebb0d4cf35e88edd2f7d2c4c3e9a5a6dab322839b321c6a87a64"
 dependencies = [
  "cfg-if 1.0.0",
- "fastrand 2.1.0",
+ "fastrand 2.1.1",
  "once_cell",
- "rustix 0.38.34",
+ "rustix 0.38.36",
  "windows-sys 0.59.0",
 ]
 
@@ -4543,7 +4543,7 @@ checksum = "a4558b58466b9ad7ca0f102865eccc95938dca1a74a856f2b57b6629050da261"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -4616,9 +4616,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.39.3"
+version = "1.40.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9babc99b9923bfa4804bd74722ff02c0381021eafa4db9949217e3be8e84fff5"
+checksum = "e2b070231665d27ad9ec9b8df639893f46727666c6767db40317fbe920a5d998"
 dependencies = [
  "backtrace",
  "bytes",
@@ -4640,7 +4640,7 @@ checksum = "693d596312e88961bc67d7f1f97af8a70227d9f90c31bba5806eec004978d752"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -4680,9 +4680,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-version = "0.7.11"
+version = "0.7.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cf6b47b3771c49ac75ad09a6162f53ad4b8088b76ac60e8ec1455b31a189fe1"
+checksum = "61e7c3654c13bcd040d4a03abee2c75b1d14a37b423cf5a813ceae1cc903ec6a"
 dependencies = [
  "bytes",
  "futures-core",
@@ -4700,7 +4700,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit 0.22.20",
+ "toml_edit",
 ]
 
 [[package]]
@@ -4714,26 +4714,15 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8534fd7f78b5405e860340ad6575217ce99f38d4d5c8f2442cb5ecb50090e1"
-dependencies = [
- "indexmap 2.4.0",
- "toml_datetime",
- "winnow 0.5.40",
-]
-
-[[package]]
-name = "toml_edit"
 version = "0.22.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "583c44c02ad26b0c3f3066fe629275e50627026c51ac2e595cca4c230ce1ce1d"
 dependencies = [
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "serde",
  "serde_spanned",
  "toml_datetime",
- "winnow 0.6.18",
+ "winnow",
 ]
 
 [[package]]
@@ -5080,7 +5069,7 @@ dependencies = [
  "once_cell",
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
  "wasm-bindgen-shared",
 ]
 
@@ -5114,7 +5103,7 @@ checksum = "afc340c74d9005395cf9dd098506f7f44e38f2b4a21c6aaacf9a105ea5e1e836"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -5205,7 +5194,7 @@ checksum = "9107ddc059d5b6fbfbffdfa7a7fe3e22a226def0b2608f72e9d552763d3e1ad7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -5216,7 +5205,7 @@ checksum = "29bee4b38ea3cde66011baa44dba677c432a78593e202392d1e9070cf2a7fca7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -5405,15 +5394,6 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
-
-[[package]]
-name = "winnow"
-version = "0.5.40"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f593a95398737aeed53e489c785df13f3618e41dbcd6718c6addbf1395aa6876"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "winnow"
@@ -5799,7 +5779,7 @@ checksum = "fa4f8080344d4671fb4e831a13ad1e68092748387dfc4f55e356242fae12ce3e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -5819,5 +5799,5 @@ checksum = "ce36e65b0d2999d2aafac989fb249189a141aee1f53c612c1f37d72631959f69"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.75",
+ "syn 2.0.77",
 ]
