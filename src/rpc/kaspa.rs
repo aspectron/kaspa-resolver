@@ -82,6 +82,7 @@ impl rpc::ClientT for Client {
         let system_id = system_id
             .and_then(|v| v[0..8].try_into().ok().map(u64::from_be_bytes))
             .unwrap_or_default();
+        let capacity = fd_limit_actual.min(clients_limit);
         // let system_id_hex_string = format!("{:016x}", system_id);
         let git_hash = git_hash.as_ref().map(ToHex::to_hex);
         Ok(Caps {
@@ -92,6 +93,7 @@ impl rpc::ClientT for Client {
             cpu_physical_cores,
             fd_limit: fd_limit_actual,
             clients_limit,
+            capacity,
         })
     }
 

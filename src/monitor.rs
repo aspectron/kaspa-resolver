@@ -252,11 +252,22 @@ impl Monitor {
 
         let connections = self.connections.read().unwrap();
 
+        const DELEGATES_ONLY: bool = true;
+
         if self.verbose() {
             if let Some(connections) = connections.get(params) {
-                for connection in connections {
-                    println!("\t- {}", connection);
-                }
+                connections
+                    .iter()
+                    .filter(|connection| {
+                        if DELEGATES_ONLY {
+                            connection.is_delegate()
+                        } else {
+                            true
+                        }
+                    })
+                    .for_each(|connection| {
+                        println!("\t- {}", connection);
+                    });
             } else {
                 println!("\t- N/A");
             }
@@ -265,7 +276,13 @@ impl Monitor {
         let connections = connections
             .get(params)?
             .iter()
-            .filter(|connection| connection.is_available())
+            .filter(|connection| {
+                if DELEGATES_ONLY {
+                    connection.is_delegate() && connection.is_available()
+                } else {
+                    connection.is_available()
+                }
+            })
             .collect::<Vec<_>>();
 
         if !connections.is_empty() {

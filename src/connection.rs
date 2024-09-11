@@ -1,16 +1,18 @@
 use crate::imports::*;
 
-#[allow(dead_code)]
-pub const BIAS_SCALE: u64 = 1_000_000;
-
 impl fmt::Display for Connection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let load = self
+            .load()
+            .map(|load| format!("{:1.2}%", load))
+            .unwrap_or_else(|| "n/a  ".to_string());
         write!(
             f,
-            "[{:016x}:{:016x}] [{:>4}] {}",
+            "[{:016x}:{:016x}] [{:>4}] [{:>7}] {}",
             self.system_id(),
             self.node.uid(),
-            self.sockets(),
+            self.clients(),
+            load,
             self.node.address
         )
     }
@@ -135,6 +137,14 @@ impl Connection {
     #[inline]
     pub fn sockets(&self) -> u64 {
         self.clients() + self.peers()
+    }
+
+    /// Connection load as a ratio of clients to capacity.
+    pub fn load(&self) -> Option<f64> {
+        self.caps
+            .load()
+            .as_ref()
+            .map(|caps| self.clients() as f64 / caps.capacity as f64)
     }
 
     /// Node capabilities (partial system spec, see [`Caps`])
@@ -303,6 +313,9 @@ impl Connection {
                                         log_success!("Connected","{}",self.node.address);
                                     }
                                     self.is_connected.store(true, Ordering::Relaxed);
+                                    // trigger caps reset
+                                    self.caps.store(None);
+                                    // update state
                                     if self.update_state().await.is_ok() {
                                         self.is_online.store(true, Ordering::Relaxed);
                                         self.update();
@@ -366,15 +379,20 @@ impl Connection {
         }
 
         if self.caps().is_none() {
+            let last_system_id = self.caps().as_ref().map(|caps| caps.system_id());
             let caps = self.client.get_caps().await?;
-            let delegate_key = Delegate::new(caps.system_id(), self.network_id());
+            let system_id = caps.system_id();
             self.caps.store(Some(Arc::new(caps)));
-            let mut delegates = self.monitor.delegates().write().unwrap();
-            if let Some(delegate) = delegates.get(&delegate_key) {
-                self.bind_delegate(Some(delegate.clone()));
-            } else {
-                delegates.insert(delegate_key, self.clone());
-                self.bind_delegate(None);
+
+            if last_system_id != Some(system_id) {
+                let delegate_key = Delegate::new(system_id, self.network_id());
+                let mut delegates = self.monitor.delegates().write().unwrap();
+                if let Some(delegate) = delegates.get(&delegate_key) {
+                    self.bind_delegate(Some(delegate.clone()));
+                } else {
+                    delegates.insert(delegate_key, self.clone());
+                    self.bind_delegate(None);
+                }
             }
         }
 

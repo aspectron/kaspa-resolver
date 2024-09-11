@@ -22,6 +22,8 @@ pub struct Caps {
     pub fd_limit: u64,
     // number of available clients
     pub clients_limit: u64,
+    // client capacity: min(fd_limit, clients_limit)
+    pub capacity: u64,
 }
 
 impl Caps {
