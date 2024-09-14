@@ -65,6 +65,7 @@ impl rpc::ClientT for Client {
             cpu_physical_cores,
             total_memory,
             fd_limit,
+            proxy_socket_limit_per_cpu_core,
         } = self.client.get_system_info().await?;
         let cpu_physical_cores = cpu_physical_cores as u64;
         let fd_limit = fd_limit as u64;
@@ -76,10 +77,12 @@ impl rpc::ClientT for Client {
         // 1024 connections per core (default NGINX worker configuration)
         // TODO: this should be increased in the future once a custom
         // proxy is implemented
-        let clients_limit = cpu_physical_cores * rpc::SOCKETS_PER_CORE;
+        let clients_limit = cpu_physical_cores
+            * proxy_socket_limit_per_cpu_core.unwrap_or(rpc::SOCKETS_PER_CORE) as u64;
         let system_id = system_id
             .and_then(|v| v[0..8].try_into().ok().map(u64::from_be_bytes))
             .unwrap_or_default();
+        let capacity = fd_limit_actual.min(clients_limit);
         // let system_id_hex_string = format!("{:016x}", system_id);
         let git_hash = git_hash.as_ref().map(ToHex::to_hex);
         Ok(Caps {
@@ -90,6 +93,7 @@ impl rpc::ClientT for Client {
             cpu_physical_cores,
             fd_limit: fd_limit_actual,
             clients_limit,
+            capacity,
         })
     }
 
@@ -98,7 +102,8 @@ impl rpc::ClientT for Client {
     }
 
     async fn get_active_connections(&self) -> Result<Connections> {
-        let GetConnectionsResponse { clients, peers } = self.client.get_connections().await?;
+        let GetConnectionsResponse { clients, peers, .. } =
+            self.client.get_connections(false).await?;
 
         Ok(Connections {
             clients: clients as u64,

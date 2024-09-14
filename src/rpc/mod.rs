@@ -3,7 +3,7 @@ pub mod sparkle;
 
 use crate::imports::*;
 
-const SOCKETS_PER_CORE: u64 = 1024;
+const SOCKETS_PER_CORE: u32 = 768;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -22,6 +22,8 @@ pub struct Caps {
     pub fd_limit: u64,
     // number of available clients
     pub clients_limit: u64,
+    // client capacity: min(fd_limit, clients_limit)
+    pub capacity: u64,
 }
 
 impl Caps {
