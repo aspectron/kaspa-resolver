@@ -17,7 +17,7 @@ pub enum RequestKind {
 #[template(path = "index.html", escape = "none")]
 struct IndexTemplate {
     access: bool,
-    version : &'static str,
+    version: &'static str,
 }
 
 pub async fn logout_handler(resolver: &Arc<Resolver>, req: Request<Body>) -> impl IntoResponse {
@@ -120,7 +120,10 @@ pub async fn status_handler(resolver: &Arc<Resolver>, req: RequestKind) -> impl 
         Ok((Some(session), cookie)) => {
             session.touch();
 
-            let index = IndexTemplate { access: true, version : crate::VERSION };
+            let index = IndexTemplate {
+                access: true,
+                version: crate::VERSION,
+            };
 
             if let Some(cookie) = cookie {
                 Response::builder()
@@ -152,11 +155,17 @@ pub async fn status_handler(resolver: &Arc<Resolver>, req: RequestKind) -> impl 
             .body(Body::from(msg))
             .unwrap(),
         Err(Error::Unauthorized) => {
-            let index = IndexTemplate { access: false, version : crate::VERSION };
+            let index = IndexTemplate {
+                access: false,
+                version: crate::VERSION,
+            };
             NoCacheHtml(index.render().unwrap()).into_response()
         }
         _ => {
-            let index = IndexTemplate { access: false, version : crate::VERSION };
+            let index = IndexTemplate {
+                access: false,
+                version: crate::VERSION,
+            };
             NoCacheHtml(index.render().unwrap()).into_response()
         }
     }
