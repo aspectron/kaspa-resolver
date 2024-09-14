@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     thead = document.createElement('thead');
     table.appendChild(thead);
-    thead.innerHTML = "<tr><th>SID:UID</th><th>SERVICE</th><th>VERSION</th><th class='fqdn'>FQDN</th><th>PROTO</th><th>ENCODING</th><th>NETWORK</th><th>STATUS</th><th class='right'>PEERS</th><th class='right'>CLIENTS/CAP</th><th class='right'>LOAD</th></tr>";
+    thead.innerHTML = "<tr><th>SID:UID</th><th>SERVICE</th><th>VERSION</th><th class='fqdn'>FQDN</th><th>PROTO</th><th>ENCODING</th><th>NETWORK</th><th>STATUS</th><th class='right'>PEERS</th><th class='right'>CLIENTS / CAP</th><th class='right'>LOAD</th></tr>";
 
     tbody = document.createElement('tbody');
     tbody.id = "nodes";
@@ -50,6 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fetchData();
 });
+
+function pad(str, len) {
+    return str.length >= len ? str : ' '.repeat(len - str.length) + str;
+}
 
 function fetchData() {
     fetch('/status/json')
@@ -153,12 +157,12 @@ function render() {
         }
 
         let load = (clients / capacity * 100.0).toFixed(2);
-        let peers_ = peers.toLocaleString();
-        let clients_ = clients.toLocaleString();
-        let capacity_ = capacity.toLocaleString();
+        let peers_ = pad(peers.toLocaleString(),4);
+        let clients_ = pad(clients.toLocaleString(),6);
+        let capacity_ = pad(capacity.toLocaleString(),6);
         el.innerHTML = `<td>${sid}:${uid}</td><td>${service}</td><td>${version}</td><td class='fqdn'>${fqdn}</td><td>${protocol}</td><td>${encoding}</td><td>${network}</td><td>${status}</td>`;
         if (status != "offline") {
-            el.innerHTML += `<td class='wide right'>${peers_}</td><td class='wide right'>${clients_} / ${capacity_}</td><td class='wide right'>${load}%</td>`;
+            el.innerHTML += `<td class='wide right pre'>${peers_}</td><td class='wide right pre'>${clients_} / ${capacity_}</td><td class='wide right'>${load}%</td>`;
         }
     });
 

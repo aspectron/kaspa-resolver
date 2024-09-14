@@ -89,3 +89,8 @@ td {
     padding-left : 16px;
     padding-right: 8px;
 }
+
+.pre {
+    white-space: pre;
+}
+
