@@ -1,4 +1,5 @@
 mod args;
+mod cache;
 mod config;
 mod connection;
 mod delegate;
@@ -12,6 +13,7 @@ mod node;
 mod panic;
 mod params;
 mod path;
+mod public;
 mod resolver;
 mod result;
 mod rpc;

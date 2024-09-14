@@ -13,40 +13,6 @@ pub enum RequestKind {
     Post(Form<HashMap<String, String>>),
 }
 
-#[derive(Clone, Copy, Debug)]
-#[must_use]
-pub struct NoCacheHtml<T>(pub T);
-
-impl<T> IntoResponse for NoCacheHtml<T>
-where
-    T: Into<Body>,
-{
-    fn into_response(self) -> Response {
-        (
-            [
-                (
-                    header::CONTENT_TYPE,
-                    HeaderValue::from_static(mime::TEXT_HTML_UTF_8.as_ref()),
-                ),
-                (
-                    header::CACHE_CONTROL,
-                    HeaderValue::from_static(
-                        "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0",
-                    ),
-                ),
-            ],
-            self.0.into(),
-        )
-            .into_response()
-    }
-}
-
-impl<T> From<T> for NoCacheHtml<T> {
-    fn from(inner: T) -> Self {
-        Self(inner)
-    }
-}
-
 #[derive(Template)]
 #[template(path = "index.html", escape = "none")]
 struct IndexTemplate {
@@ -191,6 +157,91 @@ pub async fn status_handler(resolver: &Arc<Resolver>, req: RequestKind) -> impl 
         _ => {
             let index = IndexTemplate { access: false };
             NoCacheHtml(index.render().unwrap()).into_response()
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct Status<'a> {
+    pub version: String,
+    #[serde(with = "SerHex::<Strict>")]
+    pub sid: u64,
+    #[serde(with = "SerHex::<Strict>")]
+    pub uid: u64,
+    pub url: &'a str,
+    pub fqdn: &'a str,
+    pub service: String,
+    // pub service: &'a str,
+    pub protocol: ProtocolKind,
+    pub encoding: EncodingKind,
+    pub encryption: TlsKind,
+    pub network: &'a NetworkId,
+    pub cores: u64,
+    pub memory: u64,
+    pub status: &'static str,
+    pub peers: u64,
+    pub clients: u64,
+    pub capacity: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delegates: Option<Vec<String>>,
+}
+
+impl<'a> From<&'a Arc<Connection>> for Status<'a> {
+    fn from(connection: &'a Arc<Connection>) -> Self {
+        let delegate = connection.delegate();
+
+        let node = connection.node();
+        let uid = node.uid();
+        let url = node.address.as_str();
+        let fqdn = node.fqdn.as_str();
+        let service = node.service().to_string();
+        let protocol = node.params().protocol();
+        let encoding = node.params().encoding();
+        let encryption = node.params().tls();
+        let network = &node.network;
+        let status = connection.status();
+        let clients = delegate.clients();
+        let peers = delegate.peers();
+        let (version, sid, capacity, cores, memory) = delegate
+            .caps()
+            .as_ref()
+            .as_ref()
+            .map(|caps| {
+                (
+                    caps.version.clone(),
+                    caps.system_id,
+                    caps.clients_limit,
+                    caps.cpu_physical_cores,
+                    caps.total_memory,
+                )
+            })
+            .unwrap_or_else(|| ("n/a".to_string(), 0, 0, 0, 0));
+
+        let delegates = connection
+            .resolve_delegators()
+            .iter()
+            .map(|connection| format!("[{:016x}] {}", connection.system_id(), connection.address()))
+            .collect::<Vec<String>>();
+        let delegates = (!delegates.is_empty()).then_some(delegates);
+
+        Self {
+            sid,
+            uid,
+            version,
+            fqdn,
+            service,
+            url,
+            protocol,
+            encoding,
+            encryption,
+            network,
+            cores,
+            memory,
+            status,
+            clients,
+            peers,
+            capacity,
+            delegates,
         }
     }
 }
