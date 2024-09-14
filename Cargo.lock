@@ -2268,7 +2268,7 @@ dependencies = [
 
 [[package]]
 name = "kaspa-resolver"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "ahash",
  "arc-swap",
