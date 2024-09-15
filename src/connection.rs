@@ -314,7 +314,8 @@ impl Connection {
                                     }
                                     self.is_connected.store(true, Ordering::Relaxed);
                                     // trigger caps reset
-                                    self.caps.store(None);
+                                    // TODO: disabling for now - this may cause cyclic references
+                                    // self.caps.store(None);
                                     // update state
                                     if self.update_state().await.is_ok() {
                                         self.is_online.store(true, Ordering::Relaxed);
