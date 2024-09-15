@@ -1,6 +1,7 @@
 pub use crate::args::Args;
+pub use crate::cache::NoCacheHtml;
 pub use crate::config::*;
-pub use crate::connection::{Connection, Output, Status};
+pub use crate::connection::{Connection, Output};
 pub use crate::delegate::*;
 pub use crate::error::Error;
 pub use crate::events::Events;
@@ -10,6 +11,7 @@ pub use crate::monitor::Monitor;
 pub use crate::node::*;
 pub use crate::params::PathParams;
 pub use crate::path::*;
+pub(crate) use crate::public;
 pub use crate::resolver::Resolver;
 pub use crate::result::Result;
 pub(crate) use crate::rpc;

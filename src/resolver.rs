@@ -98,6 +98,20 @@ impl Resolver {
             get(|req: Request<Body>| async move { status::json_handler(&this, req).await }),
         );
 
+        if self.args().public() {
+            let this = self.clone();
+            router = router.route(
+                "/",
+                get(|req: Request<Body>| async move { public::status_handler(&this, req).await }),
+            );
+
+            let this = self.clone();
+            router = router.route(
+                "/json",
+                get(|req: Request<Body>| async move { public::json_handler(&this, req).await }),
+            );
+        }
+
         if let Some(rate_limit) = self.args().rate_limit.as_ref() {
             log_success!(
                 "Limits",
@@ -278,34 +292,6 @@ impl Resolver {
         }
     }
 
-    // respond with a JSON object containing the status of all nodes
-    #[allow(dead_code)]
-    fn get_status<F>(&self, monitor: Option<&Monitor>, filter: F) -> impl IntoResponse
-    where
-        F: Fn(&&Arc<Connection>) -> bool,
-    {
-        if let Some(monitor) = monitor {
-            let connections = monitor.to_vec();
-            let status = connections
-                .iter()
-                .filter(filter)
-                .map(Status::from)
-                .collect::<Vec<_>>();
-
-            with_json(status)
-        } else {
-            let kaspa = self.inner.kaspa.to_vec();
-            let sparkle = self.inner.sparkle.to_vec();
-            let status = kaspa
-                .iter()
-                .chain(sparkle.iter())
-                .filter(filter)
-                .map(Status::from)
-                .collect::<Vec<_>>();
-            with_json(status)
-        };
-    }
-
     // // respond with a JSON object containing the status of all nodes
     pub fn connections(&self) -> Vec<Arc<Connection>> {
         let kaspa = self.inner.kaspa.to_vec();
@@ -370,31 +356,6 @@ fn with_json_string(json: String) -> Response<Body> {
             (header::CONNECTION, HeaderValue::from_static("close")),
         ],
         json,
-    )
-        .into_response()
-}
-
-#[inline]
-fn with_json<T>(data: T) -> Response<Body>
-where
-    T: Serialize,
-{
-    (
-        StatusCode::OK,
-        [
-            (
-                header::CONTENT_TYPE,
-                HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
-            ),
-            (
-                header::CACHE_CONTROL,
-                HeaderValue::from_static(
-                    "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0",
-                ),
-            ),
-            (header::CONNECTION, HeaderValue::from_static("close")),
-        ],
-        serde_json::to_string(&data).unwrap(),
     )
         .into_response()
 }

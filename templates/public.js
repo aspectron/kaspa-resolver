@@ -14,39 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     thead = document.createElement('thead');
     table.appendChild(thead);
-    thead.innerHTML = "<tr><th>SID:UID</th><th>SERVICE</th><th>VERSION</th><th class='fqdn'>FQDN</th><th>PROTO</th><th>ENCODING</th><th>NETWORK</th><th>STATUS</th><th class='right'>PEERS</th><th class='right'>CLIENTS / CAP</th><th class='right'>LOAD</th></tr>";
+    thead.innerHTML = "<tr><th>SID:UID</th><th>SERVICE</th><th>VERSION</th><th>NETWORK</th><th>STATUS</th><th class='right'>PEERS</th><th class='right'>CLIENTS / CAP</th><th class='right'>LOAD</th></tr>";
 
     tbody = document.createElement('tbody');
     tbody.id = "nodes";
     table.appendChild(tbody);
-
-    ["offline", "delegators"].forEach((id) => {
-        document.getElementById(id).addEventListener('change', () => {
-            render();
-        });
-    });
-
-    document.getElementById('fqdn').addEventListener('change', (e) => {
-        let checked = e.target.checked;
-        if (!e.target.checked) {
-            document.getElementById("fqdn-style").innerHTML = ".fqdn { display: none; }";
-        } else {
-            document.getElementById("fqdn-style").innerHTML = "";
-        }
-
-        // Array.from(document.getElementsByClassName('fqdn')).forEach((el) => {
-        //     el.classList.toggle('hidden');
-        // });
-    });
-
-    ["sort-fqdn", "sort-sid", "sort-network"].forEach((id) => {
-        document.getElementById(id).addEventListener('change', (e) => {
-            window.resolver.sort = id.split('-')[1];
-            render();
-        });
-    });
-
-    document.getElementById(`sort-${window.resolver.sort}`).checked = true;
 
     fetchData();
 });
@@ -56,15 +28,15 @@ function pad(str, len) {
 }
 
 function fetchData() {
-    fetch('/status/json')
+    fetch('/json')
         .then(response => response.json())
         .then(data => {
             window.resolver.nodes = data;
             render();
-            setTimeout(fetchData, 5000);
+            setTimeout(fetchData, 7500);
         })
         .catch(error => {
-            setTimeout(fetchData, 5000);
+            setTimeout(fetchData, 1000);
             console.error('Error fetching data:', error);
         });
 }
@@ -81,24 +53,11 @@ function filter(node, ctx) {
     }
 }
 
-function sortData(node) {
-    switch (window.resolver.sort) {
-        case "fqdn":
-            return node.fqdn;
-        case "network":
-            return node.network;
-        case "sid":
-            return node.sid;
-        default:
-            return node.fqdn;
-    }
-}
-
 function render() {
 
     let ctx = {
-        offline : document.getElementById('offline').checked,
-        delegators : document.getElementById('delegators').checked,
+        offline : true,
+        delegators : false,
     };
 
     let resort = false;
@@ -127,7 +86,6 @@ function render() {
             version,
             sid,
             uid,
-            fqdn,
             service,
             url,
             protocol,
@@ -147,20 +105,17 @@ function render() {
         if (!el) {
             el = document.createElement('tr');
             el.id = uid;
+            el.setAttribute('data-sort', node.network);
             tbody.appendChild(el);
             resort = true;
         }
         el.className = filter(node, ctx);
 
-        if (resort) {
-            el.setAttribute('data-sort', sortData(node));
-        }
-
         let load = (clients / capacity * 100.0).toFixed(2);
         let peers_ = pad(peers.toLocaleString(),4);
         let clients_ = pad(clients.toLocaleString(),6);
         let capacity_ = pad(capacity.toLocaleString(),6);
-        el.innerHTML = `<td>${sid}:${uid}</td><td>${service}</td><td>${version}</td><td class='fqdn'>${fqdn}</td><td>${protocol}</td><td>${encoding}</td><td>${network}</td><td>${status}</td>`;
+        el.innerHTML = `<td>${sid}:${uid}</td><td>${service}</td><td>${version}</td><td>${network}</td><td>${status}</td>`;
         if (status != "offline") {
             el.innerHTML += `<td class='wide right pre'>${peers_}</td><td class='wide right pre'>${clients_} / ${capacity_}</td><td class='wide right'>${load}%</td>`;
         }

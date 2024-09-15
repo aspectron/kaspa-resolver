@@ -30,6 +30,8 @@ pub struct Args {
     pub auto_update: bool,
     /// Custom config file
     pub user_config: Option<PathBuf>,
+    /// public status page
+    pub public: bool,
     // Show node data on each election
     // pub election: bool,
     // Enable resolver status access via `/status`
@@ -39,6 +41,10 @@ pub struct Args {
 }
 
 impl Args {
+    pub fn public(&self) -> bool {
+        self.public
+    }
+
     pub fn parse() -> Args {
         #[allow(unused)]
         use clap::{arg, command, Arg, Command};
@@ -49,6 +55,7 @@ impl Args {
             ))
             .arg(arg!(--version "Display software version"))
             .arg(arg!(--verbose "Enable verbose logging"))
+            .arg(arg!(--public "Enable public status page"))
             .arg(arg!(--trace "Enable trace log level"))
             .arg(arg!(--debug "Enable additional debug output"))
             // .arg(arg!(--auto-update "Poll configuration updates"))
@@ -94,6 +101,7 @@ impl Args {
 
         let matches = cmd.get_matches();
 
+        let public = matches.get_one::<bool>("public").cloned().unwrap_or(false);
         let trace = matches.get_one::<bool>("trace").cloned().unwrap_or(false);
         let verbose = matches.get_one::<bool>("verbose").cloned().unwrap_or(false);
         let debug = matches.get_one::<bool>("debug").cloned().unwrap_or(false);
@@ -173,6 +181,7 @@ impl Args {
             debug,
             auto_update,
             user_config,
+            public,
             // election,
             // status,
             listen,

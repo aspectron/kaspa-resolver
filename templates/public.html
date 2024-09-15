@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Status</title>
+    <style>
+        body {
+            margin: 0px;
+            padding: 32px;
+            font-size: 16px;
+            font-family: "Menlo", "Consolas", "Andale Mono", monospace;
+        }
+        .hidden {
+            display: none;
+        }
+        input {
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: "Menlo", "Consolas", "Andale Mono", monospace;
+            text-align: center;
+            background-color: transparent;
+        }
+        input::placeholder {
+            font-size: 16px;
+            font-family: "Menlo", "Consolas", "Andale Mono", monospace;
+        }
+        .menu {
+            user-select: none;
+        }
+        .menu, .status {
+            break-after: always;
+            margin-bottom: 16px;
+        }
+        label.sort {
+            padding-left: 4px;
+            padding-right: 8px;
+        }
+    </style>
+    <style>
+        {% include "public.css" %}
+    </style>
+    <script>{% include "public.js" %}</script>
+    <!-- : -->
+</head>
+<body>
+    <div class="status">
+        <table>
+            <tr id="status">
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

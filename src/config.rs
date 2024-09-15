@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use crate::imports::*;
 use chrono::prelude::*;
 
-const VERSION: u64 = 2;
+const VERSION: u64 = 3;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
