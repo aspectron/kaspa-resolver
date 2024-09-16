@@ -317,6 +317,12 @@ impl Connection {
                                     // TODO: disabling for now - this may cause cyclic references
                                     // self.caps.store(None);
                                     // update state
+
+                                    if self.caps().is_some() {
+                                        // trigger version update
+                                        let _ = self.update_caps().await;
+                                    }
+
                                     if self.update_state().await.is_ok() {
                                         self.is_online.store(true, Ordering::Relaxed);
                                         self.update();
@@ -368,6 +374,16 @@ impl Connection {
             .signal(())
             .await
             .expect("NodeConnection shutdown signal error");
+        Ok(())
+    }
+
+    async fn update_caps(self: &Arc<Self>) -> Result<()> {
+        if let Some(prev_caps) = self.caps().as_ref() {
+            let new_caps = self.client.get_caps().await?;
+            let caps = Caps::with_version(prev_caps, new_caps.version);
+            self.caps.store(Some(Arc::new(caps)));
+        }
+
         Ok(())
     }
 

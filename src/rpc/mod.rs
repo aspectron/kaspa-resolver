@@ -30,6 +30,19 @@ impl Caps {
     pub fn system_id(&self) -> u64 {
         self.system_id
     }
+
+    pub fn with_version(&self, version: String) -> Self {
+        Self {
+            version,
+            system_id: self.system_id,
+            git_hash: self.git_hash.clone(),
+            total_memory: self.total_memory,
+            cpu_physical_cores: self.cpu_physical_cores,
+            fd_limit: self.fd_limit,
+            clients_limit: self.clients_limit,
+            capacity: self.capacity,
+        }
+    }
 }
 
 #[derive(Debug)]
