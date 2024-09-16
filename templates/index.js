@@ -122,7 +122,9 @@ function render() {
         window.resolver.lastSort = window.resolver.sort;
     }
 
-    window.resolver.nodes.forEach((node) => {
+    window.resolver.nodes
+        .filter((node) => !(node.sid == "0000000000000000" && node.encoding == "json"))
+        .forEach((node) => {
         let { 
             version,
             sid,
