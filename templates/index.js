@@ -1,3 +1,5 @@
+const KASPA_NG_URL = 'https://kaspa-ng.org/';
+
 document.addEventListener('DOMContentLoaded', () => {
     window.resolver = {
         sort : "network",
@@ -162,6 +164,7 @@ function render() {
         let peers_ = pad(peers.toLocaleString(),4);
         let clients_ = pad(clients.toLocaleString(),6);
         let capacity_ = pad(capacity.toLocaleString(),6);
+        fqdn = (status != "offline") ? `<a href=${KASPA_NG_URL}?wrpc=${url} target="_blank">${fqdn}</a>` : fqdn;
         el.innerHTML = `<td>${sid}:${uid}</td><td>${service}</td><td>${version}</td><td class='fqdn'>${fqdn}</td><td>${protocol}</td><td>${encoding}</td><td>${network}</td><td>${status}</td>`;
         if (status != "offline") {
             el.innerHTML += `<td class='wide right pre'>${peers_}</td><td class='wide right pre'>${clients_} / ${capacity_}</td><td class='wide right'>${load}%</td>`;
