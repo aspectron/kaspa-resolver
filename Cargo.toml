@@ -41,8 +41,8 @@ kaspa-wrpc-client = { git = "https://github.com/aspectron/rusty-kaspa.git", bran
 # sparkle-rpc-core = { path = "../sparkle/rpc/core" }
 # sparkle-rpc-client = { path = "../sparkle/rpc/client" }
 
-sparkle-rpc-core = { git = "https://github.com/aspectron/sparkle.git", branch = "pnn-v1" }
-sparkle-rpc-client = { git = "https://github.com/aspectron/sparkle.git", branch = "pnn-v1" }
+# sparkle-rpc-core = { git = "https://github.com/aspectron/sparkle.git", branch = "pnn-v1" }
+# sparkle-rpc-client = { git = "https://github.com/aspectron/sparkle.git", branch = "pnn-v1" }
 
 ahash = "0.8.6"
 arc-swap = "1.7.1"

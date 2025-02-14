@@ -13,9 +13,8 @@ pub enum Error {
     #[error(transparent)]
     KaspaRpcCore(#[from] kaspa_rpc_core::RpcError),
 
-    #[error(transparent)]
-    SparkleRpc(#[from] sparkle_rpc_client::error::Error),
-
+    // #[error(transparent)]
+    // SparkleRpc(#[from] sparkle_rpc_client::error::Error),
     #[error("TOML error: {0}")]
     Toml(#[from] toml::de::Error),
 

@@ -56,7 +56,7 @@ pub struct Connections {
 #[derive(Debug)]
 pub enum Client {
     Kaspa(kaspa::Client),
-    Sparkle(sparkle::Client),
+    // Sparkle(sparkle::Client),
 }
 
 #[enum_dispatch(Client)]

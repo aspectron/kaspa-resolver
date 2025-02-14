@@ -19,7 +19,7 @@ struct Inner {
     args: Arc<Args>,
     http_server: Mutex<Option<(TcpListener, Router)>>,
     kaspa: Arc<Monitor>,
-    sparkle: Arc<Monitor>,
+    // sparkle: Arc<Monitor>,
     shutdown_ctl: DuplexChannel<()>,
     events: Channel<Events>,
     sessions: Sessions,
@@ -31,7 +31,7 @@ impl Inner {
             args: args.clone(),
             http_server: Default::default(),
             kaspa: Arc::new(Monitor::new(args, Service::Kaspa)),
-            sparkle: Arc::new(Monitor::new(args, Service::Sparkle)),
+            // sparkle: Arc::new(Monitor::new(args, Service::Sparkle)),
             shutdown_ctl: DuplexChannel::oneshot(),
             events: Channel::unbounded(),
             sessions: Sessions::new(HttpStatus::sessions(), HttpStatus::ttl()),
@@ -64,11 +64,11 @@ impl Resolver {
             get(|path| async move { this.get_elected_kaspa(path).await }),
         );
 
-        let this = self.clone();
-        router = router.route(
-            "/v2/sparkle/:network/:tls/:protocol/:encoding",
-            get(|path| async move { this.get_elected_sparkle(path).await }),
-        );
+        // let this = self.clone();
+        // router = router.route(
+        //     "/v2/sparkle/:network/:tls/:protocol/:encoding",
+        //     get(|path| async move { this.get_elected_sparkle(path).await }),
+        // );
 
         let this = self.clone();
         router = router.route(
@@ -165,7 +165,7 @@ impl Resolver {
 
     pub async fn start(self: &Arc<Self>) -> Result<()> {
         self.inner.kaspa.start().await?;
-        self.inner.sparkle.start().await?;
+        // self.inner.sparkle.start().await?;
 
         let this = self.clone();
         spawn(async move {
@@ -180,7 +180,7 @@ impl Resolver {
     }
 
     pub async fn stop(self: &Arc<Self>) -> Result<()> {
-        self.inner.sparkle.stop().await?;
+        // self.inner.sparkle.stop().await?;
         self.inner.kaspa.stop().await?;
 
         self.inner
@@ -249,10 +249,10 @@ impl Resolver {
 
     async fn update_nodes(self: &Arc<Self>, mut global_node_list: Vec<Arc<Node>>) -> Result<()> {
         self.inner.kaspa.update_nodes(&mut global_node_list).await?;
-        self.inner
-            .sparkle
-            .update_nodes(&mut global_node_list)
-            .await?;
+        // self.inner
+        //     .sparkle
+        //     .update_nodes(&mut global_node_list)
+        //     .await?;
 
         for node in global_node_list.iter() {
             log_error!("Update", "Dangling node record: {}", node);
@@ -294,11 +294,13 @@ impl Resolver {
 
     // // respond with a JSON object containing the status of all nodes
     pub fn connections(&self) -> Vec<Arc<Connection>> {
-        let kaspa = self.inner.kaspa.to_vec();
+        self.inner.kaspa.to_vec()
 
-        let sparkle = self.inner.sparkle.to_vec();
+        // let kaspa = self.inner.kaspa.to_vec();
 
-        kaspa.into_iter().chain(sparkle).collect::<Vec<_>>()
+        // let sparkle = self.inner.sparkle.to_vec();
+
+        // kaspa.into_iter().chain(sparkle).collect::<Vec<_>>()
     }
 
     // respond with a JSON object containing the elected node
@@ -317,21 +319,21 @@ impl Resolver {
         }
     }
 
-    #[allow(dead_code)]
-    async fn get_elected_sparkle(
-        &self,
-        // Query(_query): Query<QueryParams>,
-        UrlPath(params): UrlPath<PathParams>,
-    ) -> impl IntoResponse {
-        // println!("params: {:?}", params);
-        // println!("query: {:?}", query);
+    // #[allow(dead_code)]
+    // async fn get_elected_sparkle(
+    //     &self,
+    //     // Query(_query): Query<QueryParams>,
+    //     UrlPath(params): UrlPath<PathParams>,
+    // ) -> impl IntoResponse {
+    //     // println!("params: {:?}", params);
+    //     // println!("query: {:?}", query);
 
-        if let Some(json) = self.inner.sparkle.election(&params) {
-            with_json_string(json)
-        } else {
-            not_found()
-        }
-    }
+    //     if let Some(json) = self.inner.sparkle.election(&params) {
+    //         with_json_string(json)
+    //     } else {
+    //         not_found()
+    //     }
+    // }
 
     pub fn sessions(&self) -> &Sessions {
         &self.inner.sessions
