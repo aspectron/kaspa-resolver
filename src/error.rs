@@ -8,7 +8,7 @@ pub enum Error {
     Custom(String),
 
     #[error("RPC error: {0}")]
-    KaspaRpc(#[from] kaspa_wrpc_client::error::Error),
+    KaspaRpc(Box<kaspa_wrpc_client::error::Error>),
 
     #[error(transparent)]
     KaspaRpcCore(#[from] kaspa_rpc_core::RpcError),
@@ -88,6 +88,12 @@ impl Error {
 impl Error {
     pub fn config<T: std::fmt::Display>(msg: T) -> Self {
         Error::Config(msg.to_string())
+    }
+}
+
+impl From<kaspa_wrpc_client::error::Error> for Error {
+    fn from(err: kaspa_wrpc_client::error::Error) -> Self {
+        Error::KaspaRpc(Box::new(err))
     }
 }
 
