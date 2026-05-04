@@ -89,6 +89,7 @@ pub trait ClientT: std::fmt::Debug + Sized + Send + Sync + 'static {
         unimplemented!()
     }
 
+    #[allow(dead_code)]
     fn trigger_abort(&self) -> Result<()> {
         unimplemented!()
     }

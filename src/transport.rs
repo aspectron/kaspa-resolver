@@ -108,6 +108,7 @@ impl TransportKind {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TransportTemplate {
     #[serde(rename = "type")]
