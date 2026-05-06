@@ -21,6 +21,6 @@ fqdn = "example1.com"
 service = "kaspa"
 tls = true
 transport-type = "wrpc-borsh"
-network = "testnet-11"
+network = "testnet-12"
 fqdn = "example2.com"
 
